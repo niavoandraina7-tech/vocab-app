@@ -1,0 +1,485 @@
+/* style.css — styles globaux de l'application */
+
+/* Reset de base */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --couleur-primaire: #1a73e8;
+  --couleur-fond: #f5f6f8;
+  --couleur-texte: #202124;
+  --couleur-texte-secondaire: #5f6368;
+  --couleur-bordure: #dadce0;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-size: 16px;
+  background-color: var(--couleur-fond);
+  color: var(--couleur-texte);
+}
+
+/* ---- Layout principal (mobile-first) ---- */
+#app {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 16px 16px 96px; /* padding bas pour laisser la place à la barre de navigation */
+}
+
+/* Écrans : masqués par défaut, seul celui avec .active est visible */
+.ecran {
+  display: none;
+}
+
+.ecran.active {
+  display: block;
+}
+
+.entete-ecran h1 {
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+/* ---- Boutons : zones de touch confortables sur mobile ---- */
+button {
+  min-height: 44px;
+  font-size: 1rem;
+  font-family: inherit;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  background-color: var(--couleur-primaire);
+  color: #ffffff;
+  cursor: pointer;
+}
+
+button:active {
+  opacity: 0.85;
+}
+
+.btn-secondaire {
+  background-color: #ffffff;
+  color: var(--couleur-primaire);
+  border: 1px solid var(--couleur-primaire);
+}
+
+.btn-retour {
+  background-color: transparent;
+  color: var(--couleur-primaire);
+  padding-left: 4px;
+  margin-bottom: 12px;
+}
+
+/* ---- Barre de navigation (mobile : en bas) ---- */
+#barre-navigation {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  background-color: #ffffff;
+  border-top: 1px solid var(--couleur-bordure);
+  padding: 6px 4px;
+  z-index: 10;
+}
+
+.nav-bouton {
+  flex: 1;
+  min-height: 48px;
+  background: none;
+  color: var(--couleur-texte-secondaire);
+  font-size: 0.85rem;
+  font-weight: 500;
+  border-radius: 8px;
+  padding: 8px 4px;
+}
+
+.nav-bouton.active {
+  color: var(--couleur-primaire);
+  font-weight: 600;
+  background-color: rgba(26, 115, 232, 0.12);
+}
+
+/* ---- Formulaire mot ---- */
+#form-mot {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+#form-mot > label {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.requis {
+  color: #d93025;
+}
+
+#form-mot input[type="text"],
+#form-mot textarea {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  font-size: 1rem;
+  font-family: inherit;
+  border: 1px solid var(--couleur-bordure);
+  border-radius: 8px;
+  background-color: #ffffff;
+  color: var(--couleur-texte);
+}
+
+#form-mot textarea {
+  resize: vertical;
+}
+
+fieldset {
+  border: none;
+  padding: 0;
+}
+
+legend {
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.categorie-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  border: 1px solid var(--couleur-bordure);
+  border-radius: 8px;
+  background-color: #ffffff;
+  font-weight: 400;
+  cursor: pointer;
+}
+
+.categorie-option input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--couleur-primaire);
+}
+
+.actions-formulaire {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.actions-formulaire .btn-danger {
+  margin-left: auto;
+}
+
+.btn-danger {
+  background-color: #d93025;
+}
+
+/* ---- Recherche et filtre ---- */
+#champ-recherche,
+#filtre-categorie {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  font-size: 1rem;
+  font-family: inherit;
+  border: 1px solid var(--couleur-bordure);
+  border-radius: 8px;
+  background-color: #ffffff;
+  color: var(--couleur-texte);
+}
+
+/* ---- Liste des mots ---- */
+#liste-mots {
+  list-style: none;
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.liste-vide {
+  text-align: center;
+  color: var(--couleur-texte-secondaire);
+  padding: 24px 12px;
+}
+
+.entree-mot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  padding: 12px 14px;
+  background-color: #ffffff;
+  border: 1px solid var(--couleur-bordure);
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.entree-mot:active {
+  opacity: 0.85;
+}
+
+.mot-titre {
+  font-size: 1.05rem;
+  font-weight: 600;
+  overflow-wrap: anywhere; /* les mots très longs passent à la ligne */
+}
+
+.mot-detail {
+  flex-basis: 100%;
+  color: var(--couleur-texte-secondaire);
+  /* Troncature de la définition sur 2 lignes si elle est longue */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.mot-categories {
+  flex-basis: 100%;
+  font-size: 0.8rem;
+  color: var(--couleur-primaire);
+}
+
+.badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+
+.badge-nouveau {
+  background-color: #e8f0fe;
+  color: #1a73e8;
+}
+
+.badge-en_cours {
+  background-color: #fef7e0;
+  color: #b06000;
+}
+
+.badge-acquis {
+  background-color: #e6f4ea;
+  color: #188038;
+}
+
+/* ---- Gestion des catégories ---- */
+#btn-nouvelle-categorie {
+  width: 100%;
+  margin-bottom: 8px;
+}
+
+.conseil {
+  font-size: 0.8rem;
+  color: var(--couleur-texte-secondaire);
+  margin-bottom: 12px;
+}
+
+.categorie-noeud {
+  margin-bottom: 4px;
+}
+
+.categorie-ligne {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 44px;
+  padding: 6px 10px;
+  margin-bottom: 6px;
+  background-color: #ffffff;
+  border: 1px solid var(--couleur-bordure);
+  border-radius: 8px;
+}
+
+.categorie-nom {
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.categorie-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.btn-mini {
+  min-height: 40px; /* zone de touch confortable tout en restant compact */
+  padding: 6px 10px;
+  font-size: 0.8rem;
+  background-color: #f1f3f4;
+  color: var(--couleur-texte);
+}
+
+.btn-mini.btn-danger {
+  background-color: #fce8e6;
+  color: #d93025;
+}
+
+.btn-mini.btn-annuler,
+.btn-annuler {
+  background-color: #f1f3f4;
+  color: var(--couleur-texte);
+}
+
+.champ-renommage {
+  flex: 1;
+  min-height: 36px;
+  padding: 6px 10px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  border: 1px solid var(--couleur-primaire);
+  border-radius: 6px;
+}
+
+.form-nom-categorie {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+  padding: 4px 10px 4px 0;
+}
+
+.form-nom-categorie input {
+  flex: 1;
+  min-height: 40px;
+  padding: 8px 10px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  border: 1px solid var(--couleur-bordure);
+  border-radius: 6px;
+}
+
+/* ---- Paramètres (export / import) ---- */
+#contenu-parametres {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+#contenu-parametres h2 {
+  font-size: 1.1rem;
+  margin-bottom: 4px;
+}
+
+/* ---- Révision ---- */
+.revision-compteur {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+#contenu-revision label {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+#contenu-revision select {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  margin-bottom: 16px;
+  font-size: 1rem;
+  font-family: inherit;
+  border: 1px solid var(--couleur-bordure);
+  border-radius: 8px;
+  background-color: #ffffff;
+  color: var(--couleur-texte);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.revision-progres {
+  color: var(--couleur-texte-secondaire);
+  margin-bottom: 8px;
+}
+
+.revision-mot {
+  font-size: 1.8rem;
+  font-weight: 700;
+  text-align: center;
+  margin: 24px 0;
+  overflow-wrap: anywhere;
+}
+
+.revision-definition {
+  font-size: 1.05rem;
+  background-color: #ffffff;
+  border: 1px solid var(--couleur-bordure);
+  border-radius: 8px;
+  padding: 14px;
+  margin-bottom: 16px;
+}
+
+.revision-evaluation {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.btn-revision.btn-facile {
+  background-color: #188038;
+}
+
+.btn-revision.btn-difficile {
+  background-color: #b06000;
+}
+
+.btn-revision.btn-echec {
+  background-color: #d93025;
+}
+
+.revision-fin {
+  text-align: center;
+}
+
+.revision-fin h2 {
+  margin-bottom: 10px;
+}
+
+.revision-fin p {
+  margin-bottom: 16px;
+}
+
+/* ---- Desktop : barre de navigation sur le côté ---- */
+@media (min-width: 768px) {
+  #barre-navigation {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: auto;
+    width: 200px;
+    flex-direction: column;
+    gap: 6px;
+    border-top: none;
+    border-right: 1px solid var(--couleur-bordure);
+    padding: 16px 8px;
+  }
+
+  #app {
+    margin-left: 200px;
+    padding-bottom: 16px;
+    max-width: 800px;
+  }
+}

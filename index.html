@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mon Vocabulaire</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="app">
+
+    <!-- Écran : Liste des mots -->
+    <section id="ecran-liste" class="ecran active">
+      <header class="entete-ecran">
+        <h1>Mon Vocabulaire</h1>
+      </header>
+      <input type="search" id="champ-recherche" placeholder="Rechercher un mot..." autocomplete="off">
+      <select id="filtre-categorie" aria-label="Filtrer par catégorie">
+        <option value="">Toutes les catégories</option>
+      </select>
+      <button id="btn-gestion-categories" class="btn-secondaire" type="button">Gérer les catégories</button>
+      <ul id="liste-mots"></ul>
+    </section>
+
+    <!-- Écran : Ajout / Édition d'un mot -->
+    <section id="ecran-ajout" class="ecran">
+      <header class="entete-ecran">
+        <h1 id="titre-ajout">Ajouter un mot</h1>
+      </header>
+      <form id="form-mot">
+        <label for="champ-mot">Mot <span class="requis">*</span></label>
+        <input type="text" id="champ-mot" required autocomplete="off">
+
+        <label for="champ-definition">Définition</label>
+        <textarea id="champ-definition" rows="3"></textarea>
+
+        <label for="champ-exemple">Exemple</label>
+        <textarea id="champ-exemple" rows="2"></textarea>
+
+        <label for="champ-langue">Langue</label>
+        <input type="text" id="champ-langue" placeholder="ex : fr, en, technique" autocomplete="off">
+
+        <fieldset>
+          <legend>Catégories</legend>
+          <div id="selection-categories"></div>
+        </fieldset>
+
+        <div class="actions-formulaire">
+          <button type="submit" id="btn-enregistrer-mot">Enregistrer</button>
+          <button type="button" id="btn-supprimer-mot" class="btn-danger" hidden>Supprimer</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Écran : Gestion des catégories -->
+    <section id="ecran-categories" class="ecran">
+      <header class="entete-ecran">
+        <h1>Catégories</h1>
+      </header>
+      <button id="btn-retour-liste" class="btn-retour" type="button">← Retour à la liste</button>
+      <button id="btn-nouvelle-categorie" class="btn-secondaire" type="button">+ Nouvelle catégorie principale</button>
+      <p class="conseil">Astuce : limitez la profondeur à 2-3 niveaux pour rester lisible.</p>
+      <div id="liste-categories"></div>
+    </section>
+
+    <!-- Écran : Révision -->
+    <section id="ecran-revision" class="ecran">
+      <header class="entete-ecran">
+        <h1>Révision</h1>
+      </header>
+      <div id="contenu-revision"></div>
+    </section>
+
+    <!-- Écran : Paramètres -->
+    <section id="ecran-parametres" class="ecran">
+      <header class="entete-ecran">
+        <h1>Paramètres</h1>
+      </header>
+      <div id="contenu-parametres">
+        <h2>Export / Import</h2>
+        <p class="conseil">Sauvegardez vos données dans un fichier JSON ou restaurez-les depuis un fichier.</p>
+        <button id="btn-exporter" type="button">Exporter mes données</button>
+        <button id="btn-importer" type="button">Importer un fichier</button>
+        <input type="file" id="champ-fichier-import" accept="application/json,.json" hidden>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- Barre de navigation -->
+  <nav id="barre-navigation">
+    <button class="nav-bouton active" data-ecran="liste" type="button">Liste</button>
+    <button class="nav-bouton" data-ecran="ajout" type="button">Ajouter</button>
+    <button class="nav-bouton" data-ecran="revision" type="button">Réviser</button>
+    <button class="nav-bouton" data-ecran="parametres" type="button">Paramètres</button>
+  </nav>
+
+  <!-- Scripts : ordre db -> categories -> mots -> revision -> export-import -> app -->
+  <script src="js/db.js"></script>
+  <script src="js/categories.js"></script>
+  <script src="js/mots.js"></script>
+  <script src="js/revision.js"></script>
+  <script src="js/export-import.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
