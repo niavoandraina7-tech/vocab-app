@@ -1,13 +1,10 @@
-// revision.js — système de révision (liste à réviser, auto-évaluation)
+// revision.js — système de révision (liste à réviser, auto-évaluation par mot)
 
 // Seuils de révision en jours selon le niveau de maîtrise
 const SEUILS_REVISION = { nouveau: 3, en_cours: 7, acquis: 14 };
 
-// État de la session en cours
-let sessionMots = [];
-let sessionIndex = 0;
-let sessionCompteur = { facile: 0, difficile: 0, echec: 0 };
-let sessionEnCours = false;
+// Mot actuellement en cours de révision (null = aucun)
+let motEnRevision = null;
 
 /**
  * Un mot est « à réviser » s'il n'a jamais été révisé,
@@ -88,22 +85,24 @@ function enregistrerEvaluation(mot, resultat) {
 }
 
 /**
- * Affiche l'écran de révision (accueil, session en cours ou fin de session).
+ * Point d'entrée principal : affiche la liste des mots à réviser (avec filtre).
+ * C'est l'écran par défaut de l'onglet Révision.
  */
 function afficherEcranRevision() {
-  if (sessionEnCours && sessionIndex < sessionMots.length) {
-    afficherSessionRevision();
-  } else if (sessionEnCours) {
-    afficherFinRevision();
-  } else {
-    afficherAccueilRevision();
+  // Si un mot est en cours de révision, on affiche sa session
+  if (motEnRevision) {
+    afficherSessionRevisionMot(motEnRevision);
+    return;
   }
+  // Sinon, on affiche la liste (accueil)
+  afficherListeMotsAReviser();
 }
 
 /**
- * Accueil : nombre de mots à réviser, filtre par catégorie, bouton démarrer.
+ * Affiche la liste des mots à réviser + filtre catégorie.
+ * Chaque mot est cliquable pour démarrer sa révision individuelle.
  */
-function afficherAccueilRevision() {
+function afficherListeMotsAReviser() {
   Promise.all([obtenirTousLesMots(), obtenirToutesLesCategories()])
     .then(([mots, categories]) => {
       const conteneur = document.getElementById('contenu-revision');
@@ -122,74 +121,165 @@ function afficherAccueilRevision() {
       if (ancienneValeur && categories.some((c) => c.id === ancienneValeur)) {
         select.value = ancienneValeur;
       }
-      select.addEventListener('change', () => afficherAccueilRevision());
+      // Quand le filtre change, on rafraîchit seulement la liste
+      select.addEventListener('change', () => mettreAJourListeMotsAReviser(select.value, mots, categories));
 
-      const motsAReviser = selectionnerMotsAReviser(mots, select.value, categories);
+      // Sélection initiale : toutes les catégories (valeur vide) ou la valeur conservée
+      const filtreInitial = ancienneValeur || '';
+      const motsAReviser = selectionnerMotsAReviser(mots, filtreInitial, categories);
 
+      // Compteur + label filtre
       const compteur = document.createElement('p');
       compteur.className = 'revision-compteur';
       compteur.textContent = motsAReviser.length === 0
-        ? 'Aucun mot à réviser. Bravo !'
+        ? 'Aucun mot à réviser aujourd\'hui, bien joué !'
         : `${motsAReviser.length} mot(s) à réviser aujourd'hui.`;
 
       const label = document.createElement('label');
       label.htmlFor = 'filtre-categorie-revision';
-      label.textContent = 'Catégorie';
+      label.textContent = 'Filtrer par catégorie (optionnel)';
 
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.id = 'btn-demarrer-revision';
-      btn.textContent = 'Démarrer la révision';
-      btn.disabled = motsAReviser.length === 0;
-      btn.addEventListener('click', demarrerRevision);
+      // Conteneur pour la liste des mots à réviser
+      const listeConteneur = document.createElement('div');
+      listeConteneur.id = 'liste-mots-revision';
+      listeConteneur.className = 'liste-mots-revision';
+      rendreListeMotsAReviser(listeConteneur, motsAReviser, categories, true); // true = cliquable pour réviser
 
-      conteneur.append(compteur, label, select, btn);
+      conteneur.append(compteur, label, select, listeConteneur);
     })
     .catch((erreur) => console.error('Erreur lors du chargement de l\'écran de révision', erreur));
 }
 
 /**
- * Démarre une session avec les mots à réviser (filtrés par la catégorie choisie).
+ * Met à jour la liste des mots à réviser quand le filtre change (sans recharger tout l'écran).
+ * @param {string} idCategorie - ID de la catégorie filtrée (vide = toutes)
+ * @param {Array<Object>} mots - Tous les mots (déjà chargés)
+ * @param {Array<Object>} categories - Toutes les catégories (déjà chargées)
  */
-function demarrerRevision() {
-  Promise.all([obtenirTousLesMots(), obtenirToutesLesCategories()])
-    .then(([mots, categories]) => {
-      const select = document.getElementById('filtre-categorie-revision');
-      sessionMots = selectionnerMotsAReviser(mots, select ? select.value : '', categories);
-      sessionIndex = 0;
-      sessionCompteur = { facile: 0, difficile: 0, echec: 0 };
-      sessionEnCours = sessionMots.length > 0;
+function mettreAJourListeMotsAReviser(idCategorie, mots, categories) {
+  const motsAReviser = selectionnerMotsAReviser(mots, idCategorie, categories);
+  const listeConteneur = document.getElementById('liste-mots-revision');
+  const compteur = document.querySelector('.revision-compteur');
 
-      if (sessionMots.length === 0) {
-        afficherAccueilRevision();
-        return;
-      }
-      afficherSessionRevision();
-    })
-    .catch((erreur) => console.error('Erreur au démarrage de la révision', erreur));
+  if (compteur) {
+    compteur.textContent = motsAReviser.length === 0
+      ? 'Aucun mot à réviser aujourd\'hui, bien joué !'
+      : `${motsAReviser.length} mot(s) à réviser aujourd'hui.`;
+  }
+  rendreListeMotsAReviser(listeConteneur, motsAReviser, categories, true);
 }
 
 /**
- * Session : affiche le mot seul, puis la définition et l'auto-évaluation après révélation.
+ * Rend la liste des mots à réviser dans le conteneur donné.
+ * @param {HTMLElement} conteneur
+ * @param {Array<Object>} motsAReviser
+ * @param {Array<Object>} categories
+ * @param {boolean} cliquable - Si true, clic sur un mot ouvre sa révision
  */
-function afficherSessionRevision() {
-  // Fin de session : plus de mot à présenter
-  if (sessionIndex >= sessionMots.length) {
-    afficherFinRevision();
+function rendreListeMotsAReviser(conteneur, motsAReviser, categories, cliquable = false) {
+  conteneur.innerHTML = '';
+
+  if (motsAReviser.length === 0) {
+    const message = document.createElement('p');
+    message.className = 'revision-liste-vide';
+    message.textContent = 'Aucun mot à réviser pour ce filtre.';
+    conteneur.appendChild(message);
     return;
   }
 
+  const nomsCategories = new Map(categories.map((c) => [c.id, c.nom]));
+
+  // Tri : plus anciens en révision d'abord (ceux qui attendent depuis le plus longtemps)
+  const motsTries = [...motsAReviser].sort((a, b) => {
+    const histA = a.historiqueRevision || [];
+    const histB = b.historiqueRevision || [];
+    const dateA = histA.length > 0 ? new Date(histA[histA.length - 1].date).getTime() : new Date(a.dateCreation).getTime();
+    const dateB = histB.length > 0 ? new Date(histB[histB.length - 1].date).getTime() : new Date(b.dateCreation).getTime();
+    return dateA - dateB;
+  });
+
+  const ul = document.createElement('ul');
+  ul.className = 'liste-mots-revision-ul';
+
+  motsTries.forEach((mot) => {
+    const li = document.createElement('li');
+    li.className = 'entree-mot-revision' + (cliquable ? ' cliquable' : '');
+
+    const motEl = document.createElement('div');
+    motEl.className = 'mot-titre-revision';
+    motEl.textContent = mot.mot;
+
+    const badge = document.createElement('span');
+    badge.className = `badge badge-${mot.niveauMaitrise || 'nouveau'}`;
+    badge.textContent = libelleNiveau(mot.niveauMaitrise || 'nouveau');
+
+    const detail = document.createElement('div');
+    detail.className = 'mot-detail-revision';
+    detail.textContent = mot.definition || '(aucune définition)';
+
+    const nomsCategorie = (mot.categorieIds || [])
+      .map((id) => nomsCategories.get(id))
+      .filter(Boolean)
+      .join(', ');
+
+    let categoriesEl = null;
+    if (nomsCategorie) {
+      categoriesEl = document.createElement('div');
+      categoriesEl.className = 'mot-categories-revision';
+      categoriesEl.textContent = nomsCategorie;
+    }
+
+    // Indicateur "depuis combien de temps" pour la révision
+    const historique = mot.historiqueRevision || [];
+    let indicateurTemps = '';
+    if (historique.length > 0) {
+      const derniereRevision = new Date(historique[historique.length - 1].date);
+      const diffJours = Math.floor((Date.now() - derniereRevision.getTime()) / (1000 * 60 * 60 * 24));
+      indicateurTemps = `Dernière révision : il y a ${diffJours} jour(s)`;
+    } else {
+      const dateCreation = new Date(mot.dateCreation);
+      const diffJours = Math.floor((Date.now() - dateCreation.getTime()) / (1000 * 60 * 60 * 24));
+      indicateurTemps = `Jamais révisé (créé il y a ${diffJours} jour(s))`;
+    }
+    const tempsEl = document.createElement('div');
+    tempsEl.className = 'mot-temps-revision';
+    tempsEl.textContent = indicateurTemps;
+
+    li.append(motEl, badge, detail);
+    if (categoriesEl) li.append(categoriesEl);
+    li.append(tempsEl);
+
+    // Clic sur le mot → ouvre sa révision individuelle
+    if (cliquable) {
+      li.style.cursor = 'pointer';
+      li.addEventListener('click', () => ouvrirRevisionMot(mot));
+    }
+
+    ul.appendChild(li);
+  });
+
+  conteneur.appendChild(ul);
+}
+
+/**
+ * Ouvre la session de révision pour un mot unique.
+ * @param {Object} mot
+ */
+function ouvrirRevisionMot(mot) {
+  motEnRevision = mot;
+  afficherSessionRevisionMot(mot);
+}
+
+/**
+ * Affiche la session de révision pour un mot unique.
+ * @param {Object} mot
+ */
+function afficherSessionRevisionMot(mot) {
   const conteneur = document.getElementById('contenu-revision');
   conteneur.innerHTML = '';
 
-  const mot = sessionMots[sessionIndex];
-
   const div = document.createElement('div');
-  div.className = 'revision-session';
-
-  const progres = document.createElement('p');
-  progres.className = 'revision-progres';
-  progres.textContent = `Mot ${sessionIndex + 1} / ${sessionMots.length}`;
+  div.className = 'revision-session-mot';
 
   const motEl = document.createElement('p');
   motEl.className = 'revision-mot';
@@ -215,7 +305,7 @@ function afficherSessionRevision() {
     btn.type = 'button';
     btn.className = `btn-revision btn-${resultat}`;
     btn.textContent = libelles[resultat];
-    btn.addEventListener('click', () => repondreRevision(mot, resultat));
+    btn.addEventListener('click', () => repondreRevisionMotUnique(mot, resultat));
     evaluationEl.appendChild(btn);
   });
 
@@ -225,50 +315,30 @@ function afficherSessionRevision() {
     evaluationEl.hidden = false;
   });
 
-  div.append(progres, motEl, btnVoir, definitionEl, evaluationEl);
+  div.append(motEl, btnVoir, definitionEl, evaluationEl);
   conteneur.appendChild(div);
 }
 
 /**
- * Traite l'auto-évaluation puis passe au mot suivant.
+ * Traite l'auto-évaluation d'un mot unique, puis revient à la liste.
  * @param {Object} mot
  * @param {string} resultat
  */
-function repondreRevision(mot, resultat) {
-  sessionCompteur[resultat]++;
+function repondreRevisionMotUnique(mot, resultat) {
   enregistrerEvaluation(mot, resultat)
     .then(() => {
-      sessionIndex++;
-      afficherSessionRevision();
+      motEnRevision = null;
+      afficherListeMotsAReviser(); // Retour à la liste mise à jour
     })
     .catch((erreur) => console.error('Erreur lors de l\'enregistrement de l\'évaluation', erreur));
 }
 
 /**
- * Fin de session : résumé des mots révisés et répartition des évaluations.
+ * Traduit un niveau de maîtrise en libellé lisible.
+ * @param {string} niveau - 'nouveau', 'en_cours' ou 'acquis'
+ * @returns {string}
  */
-function afficherFinRevision() {
-  const conteneur = document.getElementById('contenu-revision');
-  conteneur.innerHTML = '';
-
-  const div = document.createElement('div');
-  div.className = 'revision-fin';
-
-  const titre = document.createElement('h2');
-  titre.textContent = 'Session terminée !';
-
-  const resume = document.createElement('p');
-  resume.textContent = `${sessionMots.length} mot(s) révisé(s) : ` +
-    `${sessionCompteur.facile} facile(s), ${sessionCompteur.difficile} difficile(s), ${sessionCompteur.echec} échec(s).`;
-
-  const btn = document.createElement('button');
-  btn.type = 'button';
-  btn.textContent = 'Terminer';
-  btn.addEventListener('click', () => {
-    sessionEnCours = false;
-    afficherEcranRevision();
-  });
-
-  div.append(titre, resume, btn);
-  conteneur.appendChild(div);
+function libelleNiveau(niveau) {
+  const libelles = { nouveau: 'Nouveau', en_cours: 'En cours', acquis: 'Acquis' };
+  return libelles[niveau] || niveau;
 }

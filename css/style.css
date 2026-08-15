@@ -461,6 +461,128 @@ button:disabled {
   margin-bottom: 16px;
 }
 
+/* ---- Liste des mots à réviser (écran Révision) ---- */
+.liste-mots-revision {
+  margin: 16px 0;
+  max-height: 40vh;
+  overflow-y: auto;
+}
+
+.revision-liste-vide {
+  text-align: center;
+  color: var(--couleur-texte-secondaire);
+  padding: 24px 12px;
+  font-style: italic;
+}
+
+.liste-mots-revision-ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.entree-mot-revision {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 6px 10px;
+  padding: 12px 14px;
+  background-color: #ffffff;
+  border: 1px solid var(--couleur-bordure);
+  border-radius: 10px;
+}
+
+.mot-titre-revision {
+  flex: 1;
+  min-width: 150px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.mot-detail-revision {
+  flex-basis: 100%;
+  color: var(--couleur-texte-secondaire);
+  font-size: 0.9rem;
+  margin-top: 2px;
+}
+
+.mot-categories-revision {
+  flex-basis: 100%;
+  font-size: 0.75rem;
+  color: var(--couleur-primaire);
+  margin-top: 4px;
+}
+
+.mot-temps-revision {
+  flex-basis: 100%;
+  font-size: 0.75rem;
+  color: var(--couleur-texte-secondaire);
+  font-style: italic;
+  margin-top: 4px;
+}
+
+/* Bouton filtre dans révision */
+#contenu-revision label[for="filtre-categorie-revision"] {
+  margin-top: 8px;
+  display: block;
+}
+
+#contenu-revision #filtre-categorie-revision {
+  margin-bottom: 16px;
+}
+
+/* Style pour les entrées cliquables dans la liste de révision */
+.entree-mot-revision.cliquable:hover {
+  background-color: #f8f9fa;
+  border-color: var(--couleur-primaire);
+}
+
+.entree-mot-revision.cliquable:active {
+  opacity: 0.85;
+}
+
+/* Session de révision pour un mot unique */
+.revision-session-mot {
+  text-align: center;
+  padding: 16px 0;
+}
+
+.revision-session-mot .revision-mot {
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 32px 0 24px;
+  overflow-wrap: anywhere;
+}
+
+.revision-session-mot .revision-definition {
+  font-size: 1.1rem;
+  background-color: #ffffff;
+  border: 1px solid var(--couleur-bordure);
+  border-radius: 8px;
+  padding: 16px;
+  margin: 16px auto;
+  max-width: 100%;
+  text-align: left;
+}
+
+.revision-session-mot .revision-evaluation {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 24px;
+  max-width: 300px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.revision-session-mot .btn-revision {
+  min-height: 56px;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
 /* ---- Desktop : barre de navigation sur le côté ---- */
 @media (min-width: 768px) {
   #barre-navigation {
