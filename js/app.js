@@ -31,9 +31,10 @@ function afficherEcran(nomEcran) {
     afficherEcranRevision();
   }
 
-  // Remet l'écran Paramètres en état (toggle rappels, seuil, messages)
+  // Remet l'écran Paramètres en état (rappels, langue de dictée, messages)
   if (nomEcran === 'parametres') {
     initialiserRappelsParametres();
+    initialiserVocalParametres();
   }
 }
 

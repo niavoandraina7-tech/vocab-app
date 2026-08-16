@@ -483,6 +483,60 @@ legend {
   border-radius: 6px;
 }
 
+/* ---- Transcription vocale (V2) ---- */
+.ligne-micro {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.ligne-micro input[type="text"],
+.ligne-micro textarea {
+  flex: 1;
+  width: auto;
+}
+
+.btn-micro {
+  min-width: 48px;
+  min-height: 44px;
+  padding: 0 12px;
+  flex-shrink: 0;
+  background-color: #f1f3f4;
+  color: var(--couleur-texte);
+  font-size: 1.2rem;
+  border: 1px solid var(--couleur-bordure);
+  border-radius: 8px;
+}
+
+.btn-micro.ecoute {
+  background-color: #d93025;
+  color: #ffffff;
+  border-color: #d93025;
+  animation: pulse-micro 1s infinite;
+}
+
+@keyframes pulse-micro {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.12); }
+}
+
+.statut-vocal {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--couleur-primaire);
+  background-color: #e8f0fe;
+  border: 1px solid rgba(26, 115, 232, 0.3);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+}
+
+.statut-vocal.statut-erreur {
+  color: #d93025;
+  background-color: #fce8e6;
+  border-color: rgba(217, 48, 37, 0.3);
+}
+
 /* ---- Paramètres (export / import) ---- */
 #contenu-parametres {
   display: flex;

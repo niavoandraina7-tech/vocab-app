@@ -33,15 +33,26 @@
       <header class="entete-ecran">
         <h1 id="titre-ajout">Ajouter un mot</h1>
       </header>
+      <p class="conseil" id="info-dictee-vocale" hidden>🎤 La dictée vocale utilise le micro du navigateur. Elle nécessite généralement une connexion internet (le traitement se fait souvent côté serveur du navigateur) et peut ne pas fonctionner hors ligne. Le texte reconnu reste modifiable à la main.</p>
+      <p class="statut-vocal" id="statut-vocal" role="status" hidden></p>
       <form id="form-mot">
         <label for="champ-mot">Mot <span class="requis">*</span></label>
-        <input type="text" id="champ-mot" required autocomplete="off">
+        <div class="ligne-micro">
+          <input type="text" id="champ-mot" required autocomplete="off">
+          <button type="button" class="btn-micro" data-cible="champ-mot" aria-label="Dicter le mot" title="Dicter le mot">🎤</button>
+        </div>
 
         <label for="champ-definition">Définition</label>
-        <textarea id="champ-definition" rows="3"></textarea>
+        <div class="ligne-micro">
+          <textarea id="champ-definition" rows="3"></textarea>
+          <button type="button" class="btn-micro" data-cible="champ-definition" aria-label="Dicter la définition" title="Dicter la définition">🎤</button>
+        </div>
 
         <label for="champ-exemple">Exemple</label>
-        <textarea id="champ-exemple" rows="2"></textarea>
+        <div class="ligne-micro">
+          <textarea id="champ-exemple" rows="2"></textarea>
+          <button type="button" class="btn-micro" data-cible="champ-exemple" aria-label="Dicter l'exemple" title="Dicter l'exemple">🎤</button>
+        </div>
 
         <label for="champ-langue">Langue</label>
         <input type="text" id="champ-langue" placeholder="ex : fr, en, technique" autocomplete="off">
@@ -105,6 +116,16 @@
         <p class="info-rappels" id="info-permission-rappels"></p>
         <p class="conseil">Limite technique : les notifications ne se déclenchent que lorsque l'app est ouverte ou en arrière-plan récent — jamais de façon garantie quand l'app est totalement fermée, car l'application fonctionne sans serveur. Le bandeau visuel dans l'app, lui, fonctionne toujours, même hors ligne.</p>
 
+        <h2>Dictée vocale</h2>
+        <div id="section-dictee-vocale">
+          <label for="reglage-langue-dictee">Langue de dictée</label>
+          <select id="reglage-langue-dictee" aria-label="Langue de dictée vocale">
+            <option value="fr-FR">Français (fr-FR)</option>
+            <option value="en-US">Anglais (en-US)</option>
+          </select>
+          <p class="conseil">La dictée vocale utilise le micro du navigateur (Web Speech API) et nécessite généralement une connexion internet. Elle peut ne pas fonctionner hors ligne ou sur certains navigateurs (ex : Firefox) ; le formulaire reste alors utilisable au clavier.</p>
+        </div>
+
         <h2>Export / Import</h2>
         <p class="conseil">Sauvegardez vos données dans un fichier JSON ou restaurez-les depuis un fichier.</p>
         <button id="btn-exporter" type="button">Exporter mes données</button>
@@ -129,6 +150,7 @@
   <script src="js/mots.js"></script>
   <script src="js/revision.js"></script>
   <script src="js/rappels.js"></script>
+  <script src="js/vocal.js"></script>
   <script src="js/export-import.js"></script>
   <script src="js/app.js"></script>
 </body>
