@@ -3,7 +3,7 @@
 // Stratégie de mise à jour : quand le contenu de l'app change, incrémenter
 // NOM_CACHE (vocab-cache-v2, v3, ...) pour forcer le re-téléchargement.
 
-const NOM_CACHE = 'vocab-cache-v2';
+const NOM_CACHE = 'vocab-cache-v3';
 
 // Tous les fichiers statiques nécessaires au fonctionnement hors ligne
 const FICHIERS_A_CACHER = [
@@ -14,6 +14,9 @@ const FICHIERS_A_CACHER = [
   'js/categories.js',
   'js/mots.js',
   'js/revision.js',
+  'js/rappels.js',
+  'js/vocal.js',
+  'js/quiz.js',
   'js/export-import.js',
   'js/app.js',
   'icons/icon-192.png',
