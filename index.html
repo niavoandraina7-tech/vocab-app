@@ -15,6 +15,11 @@
       <header class="entete-ecran">
         <h1>Mon Vocabulaire</h1>
       </header>
+      <!-- Bandeau de rappel : visible quand des mots attendent une révision -->
+      <button id="bandeau-rappels" class="bandeau-rappels" type="button" hidden>
+        <span id="bandeau-rappels-texte"></span>
+        <span class="bandeau-fleche" aria-hidden="true">→</span>
+      </button>
       <input type="search" id="champ-recherche" placeholder="Rechercher un mot..." autocomplete="off">
       <select id="filtre-categorie" aria-label="Filtrer par catégorie">
         <option value="">Toutes les catégories</option>
@@ -78,6 +83,28 @@
         <h1>Paramètres</h1>
       </header>
       <div id="contenu-parametres">
+        <h2>Rappels de révision</h2>
+        <div class="reglage-ligne">
+          <div>
+            <strong>Activer les rappels</strong>
+            <p class="conseil">Être prévenu quand des mots attendent une révision.</p>
+          </div>
+          <label class="interrupteur" aria-label="Activer ou désactiver les rappels de révision">
+            <input type="checkbox" id="reglage-rappels-actives">
+            <span class="curseur"></span>
+          </label>
+        </div>
+        <label for="reglage-seuil-rappels">Notifier si un mot attend depuis plus de</label>
+        <select id="reglage-seuil-rappels" aria-label="Seuil de rappel en jours">
+          <option value="1">1 jour</option>
+          <option value="2">2 jours</option>
+          <option value="3">3 jours</option>
+          <option value="5">5 jours</option>
+          <option value="7">7 jours</option>
+        </select>
+        <p class="info-rappels" id="info-permission-rappels"></p>
+        <p class="conseil">Limite technique : les notifications ne se déclenchent que lorsque l'app est ouverte ou en arrière-plan récent — jamais de façon garantie quand l'app est totalement fermée, car l'application fonctionne sans serveur. Le bandeau visuel dans l'app, lui, fonctionne toujours, même hors ligne.</p>
+
         <h2>Export / Import</h2>
         <p class="conseil">Sauvegardez vos données dans un fichier JSON ou restaurez-les depuis un fichier.</p>
         <button id="btn-exporter" type="button">Exporter mes données</button>
@@ -101,6 +128,7 @@
   <script src="js/categories.js"></script>
   <script src="js/mots.js"></script>
   <script src="js/revision.js"></script>
+  <script src="js/rappels.js"></script>
   <script src="js/export-import.js"></script>
   <script src="js/app.js"></script>
 </body>

@@ -18,6 +18,7 @@ function afficherEcran(nomEcran) {
   // Recharge la liste des mots à chaque affichage de l'écran Liste
   if (nomEcran === 'liste') {
     afficherListeMots();
+    mettreAJourBandeauRappel();
   }
 
   // Recharge l'arbre des catégories à chaque affichage de l'écran Catégories
@@ -28,6 +29,11 @@ function afficherEcran(nomEcran) {
   // Affiche l'écran de révision (accueil, session ou fin de session)
   if (nomEcran === 'revision') {
     afficherEcranRevision();
+  }
+
+  // Remet l'écran Paramètres en état (toggle rappels, seuil, messages)
+  if (nomEcran === 'parametres') {
+    initialiserRappelsParametres();
   }
 }
 
@@ -64,6 +70,9 @@ obtenirBase()
   .then(initialiserCategoriesParDefaut)
   .then(() => {
     afficherListeMots();
+    // À chaque ouverture de l'app : bandeau de rappel + notification éventuelle
+    mettreAJourBandeauRappel();
+    verifierRappelNotification();
   })
   .catch((erreur) => {
     console.error('Erreur lors de l\'initialisation de l\'application', erreur);

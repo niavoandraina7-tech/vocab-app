@@ -189,6 +189,123 @@ legend {
   background-color: #d93025;
 }
 
+/* ---- Bandeau de rappel (V2) ---- */
+.bandeau-rappels {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  min-height: 48px;
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  background-color: #e8f0fe;
+  color: var(--couleur-primaire);
+  border: 1px solid rgba(26, 115, 232, 0.35);
+  border-radius: 10px;
+  font-weight: 600;
+  text-align: left;
+}
+
+.bandeau-rappels:hover {
+  background-color: #dce8fc;
+}
+
+.bandeau-rappels:active {
+  opacity: 0.85;
+}
+
+.bandeau-fleche {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+/* ---- Réglages (V2 : rappels) ---- */
+.reglage-ligne {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+  background-color: #ffffff;
+  border: 1px solid var(--couleur-bordure);
+  border-radius: 10px;
+}
+
+.reglage-ligne .conseil {
+  margin-bottom: 0;
+  margin-top: 2px;
+}
+
+.interrupteur {
+  position: relative;
+  display: inline-block;
+  width: 52px;
+  height: 30px;
+  flex-shrink: 0;
+}
+
+.interrupteur input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.interrupteur .curseur {
+  position: absolute;
+  inset: 0;
+  background-color: #bdc1c6;
+  border-radius: 999px;
+  transition: background-color 0.2s;
+  cursor: pointer;
+}
+
+.interrupteur .curseur::before {
+  content: '';
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  left: 3px;
+  top: 3px;
+  background-color: #ffffff;
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+
+.interrupteur input:checked + .curseur {
+  background-color: var(--couleur-primaire);
+}
+
+.interrupteur input:checked + .curseur::before {
+  transform: translateX(22px);
+}
+
+.interrupteur input:disabled + .curseur {
+  opacity: 0.5;
+  cursor: default;
+}
+
+#contenu-parametres select {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  font-size: 1rem;
+  font-family: inherit;
+  border: 1px solid var(--couleur-bordure);
+  border-radius: 8px;
+  background-color: #ffffff;
+  color: var(--couleur-texte);
+}
+
+.info-rappels {
+  font-size: 0.8rem;
+  font-style: italic;
+  color: var(--couleur-texte-secondaire);
+  margin-bottom: 8px;
+}
+
 /* ---- Recherche et filtre ---- */
 #champ-recherche,
 #filtre-categorie {
