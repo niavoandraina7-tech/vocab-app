@@ -632,6 +632,178 @@ button:disabled {
   margin-bottom: 16px;
 }
 
+/* ---- Quiz chronométré (V2) ---- */
+.btn-quiz-lancer {
+  width: 100%;
+  margin-bottom: 16px;
+  background-color: #7b1fa2;
+}
+
+.btn-quiz-lancer:hover {
+  background-color: #6a1b9a;
+}
+
+.quiz-titre {
+  font-size: 1.3rem;
+  margin-bottom: 8px;
+}
+
+.quiz-intro {
+  color: var(--couleur-texte-secondaire);
+  margin-bottom: 12px;
+}
+
+.quiz-info {
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+.quiz-info-vide {
+  font-weight: 400;
+  font-style: italic;
+  color: var(--couleur-texte-secondaire);
+  margin-top: 12px;
+}
+
+.quiz-choix-nombre {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.quiz-choix-nombre > p {
+  flex-basis: 100%;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.btn-quiz-choix {
+  min-width: 64px;
+  flex: 1;
+  background-color: #ffffff;
+  color: var(--couleur-primaire);
+  border: 2px solid var(--couleur-primaire);
+  font-weight: 600;
+}
+
+.btn-quiz-tous {
+  flex-basis: 100%;
+}
+
+.quiz-progres {
+  color: var(--couleur-texte-secondaire);
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.quiz-note-reduit {
+  font-size: 0.85rem;
+  color: #b06000;
+  background-color: #fef7e0;
+  border: 1px solid rgba(176, 96, 0, 0.3);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+}
+
+.quiz-mot {
+  font-size: 2.2rem;
+  font-weight: 700;
+  text-align: center;
+  margin: 28px 0;
+  overflow-wrap: anywhere;
+}
+
+.quiz-zone-temps {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.quiz-chiffre {
+  display: inline-block;
+  font-size: 2.6rem;
+  font-weight: 700;
+  color: var(--couleur-primaire);
+  margin-bottom: 8px;
+}
+
+.quiz-chiffre.quiz-urgent {
+  color: #d93025;
+}
+
+.quiz-barre-temps {
+  width: 100%;
+  height: 10px;
+  background-color: #e8eaed;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.quiz-remplissage {
+  height: 100%;
+  background-color: var(--couleur-primaire);
+  border-radius: 999px;
+  transition: width 1s linear;
+}
+
+.quiz-definition {
+  font-size: 1.1rem;
+  background-color: #ffffff;
+  border: 1px solid var(--couleur-bordure);
+  border-radius: 8px;
+  padding: 16px;
+  margin: 16px 0;
+}
+
+.quiz-reponse {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.btn-quiz-je-savais {
+  min-height: 56px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  background-color: #188038;
+}
+
+.btn-quiz-pas-su {
+  min-height: 56px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  background-color: #d93025;
+}
+
+.quiz-resultat-titre {
+  font-size: 1.4rem;
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.quiz-resultat-score {
+  font-size: 3rem;
+  font-weight: 700;
+  text-align: center;
+  color: var(--couleur-primaire);
+  margin: 12px 0;
+}
+
+.quiz-resultat-message {
+  font-size: 1.15rem;
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.quiz-resultat-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
 /* ---- Liste des mots à réviser (écran Révision) ---- */
 .liste-mots-revision {
   margin: 16px 0;

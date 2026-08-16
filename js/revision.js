@@ -103,6 +103,11 @@ function afficherEcranRevision() {
  * Chaque mot est cliquable pour démarrer sa révision individuelle.
  */
 function afficherListeMotsAReviser() {
+  // Si une session de quiz était en cours, on l'arrête proprement
+  if (typeof arreterQuiz === 'function') {
+    arreterQuiz();
+  }
+
   Promise.all([obtenirTousLesMots(), obtenirToutesLesCategories()])
     .then(([mots, categories]) => {
       const conteneur = document.getElementById('contenu-revision');
@@ -135,6 +140,14 @@ function afficherListeMotsAReviser() {
         ? 'Aucun mot à réviser aujourd\'hui, bien joué !'
         : `${motsAReviser.length} mot(s) à réviser aujourd'hui.`;
 
+      // Bouton quiz : accès au mode « jeu » (V2), à côté de la révision classique
+      const btnQuiz = document.createElement('button');
+      btnQuiz.type = 'button';
+      btnQuiz.id = 'btn-lancer-quiz';
+      btnQuiz.className = 'btn-quiz-lancer';
+      btnQuiz.textContent = '🎮 Lancer un quiz';
+      btnQuiz.addEventListener('click', afficherConfigQuiz);
+
       const label = document.createElement('label');
       label.htmlFor = 'filtre-categorie-revision';
       label.textContent = 'Filtrer par catégorie (optionnel)';
@@ -145,7 +158,7 @@ function afficherListeMotsAReviser() {
       listeConteneur.className = 'liste-mots-revision';
       rendreListeMotsAReviser(listeConteneur, motsAReviser, categories, true); // true = cliquable pour réviser
 
-      conteneur.append(compteur, label, select, listeConteneur);
+      conteneur.append(compteur, btnQuiz, label, select, listeConteneur);
     })
     .catch((erreur) => console.error('Erreur lors du chargement de l\'écran de révision', erreur));
 }

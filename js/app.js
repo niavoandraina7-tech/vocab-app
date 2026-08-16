@@ -5,6 +5,11 @@
  * @param {string} nomEcran - Identifiant de l'écran (liste, ajout, categories, revision, parametres)
  */
 function afficherEcran(nomEcran) {
+  // Quitter l'écran de révision arrête une éventuelle session de quiz
+  if (nomEcran !== 'revision') {
+    arreterQuiz();
+  }
+
   // Masque tous les écrans, puis affiche celui demandé
   document.querySelectorAll('.ecran').forEach((section) => {
     section.classList.toggle('active', section.id === `ecran-${nomEcran}`);
