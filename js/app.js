@@ -38,7 +38,6 @@ function afficherEcran(nomEcran) {
   // Recharge la liste des mots à chaque affichage de l'écran Liste
   if (nomEcran === 'liste') {
     afficherListeMots();
-    mettreAJourBandeauRappel();
     // Indicateur de synchronisation (état + modifications en attente)
     if (typeof mettreAJourIndicateurSync === 'function') {
       mettreAJourIndicateurSync();
@@ -198,8 +197,7 @@ obtenirBase()
       initialiserSync();
     }
     afficherListeMots();
-    // À chaque ouverture de l'app : bandeau de rappel + notification éventuelle
-    mettreAJourBandeauRappel();
+    // À chaque ouverture de l'app : notification éventuelle
     verifierRappelNotification();
   })
   .catch((erreur) => {

@@ -1,10 +1,9 @@
-// rappels.js — rappels de révision (bandeau visuel à l'ouverture + notification navigateur)
+// rappels.js — rappels de révision (notification navigateur à l'ouverture)
 //
-// Deux mécanismes complémentaires :
-// 1. Bandeau visuel dans l'écran Liste — fiable, fonctionne hors ligne, sans permission.
-// 2. Notification navigateur — best-effort : ne se déclenche que lorsque l'app est
-//    ouverte (ou en arrière-plan récent), jamais de façon garantie app fermée,
-//    car l'application fonctionne sans backend.
+// Notification navigateur — best-effort : ne se déclenche que lorsque l'app est
+// ouverte (ou en arrière-plan récent), jamais de façon garantie app fermée,
+// car l'application fonctionne sans backend (le push Web Push, lui, fonctionne
+// app fermée — voir js/push.js).
 
 // Réglages persistés en localStorage (l'app n'a pas encore de store de paramètres)
 const CLE_RAPPELS_ACTIVES = 'rappelsActives';
@@ -26,29 +25,6 @@ function rappelsActives() {
 function seuilRappelJours() {
   const valeur = parseInt(localStorage.getItem(CLE_SEUIL_RAPPEL_JOURS), 10);
   return Number.isInteger(valeur) && valeur > 0 ? valeur : SEUIL_RAPPEL_DEFAUT;
-}
-
-/**
- * Met à jour le bandeau « X mots à réviser aujourd'hui » de l'écran Liste.
- * Le bandeau est masqué dès qu'aucun mot n'est en attente.
- */
-function mettreAJourBandeauRappel() {
-  Promise.all([obtenirTousLesMots(), obtenirToutesLesCategories()])
-    .then(([mots, categories]) => {
-      const motsAReviser = selectionnerMotsAReviser(mots, '', categories);
-      const bandeau = document.getElementById('bandeau-rappels');
-      if (!bandeau) {
-        return;
-      }
-      if (motsAReviser.length === 0) {
-        bandeau.hidden = true;
-        return;
-      }
-      document.getElementById('bandeau-rappels-texte').textContent =
-        `📌 ${motsAReviser.length} mot(s) à réviser aujourd'hui`;
-      bandeau.hidden = false;
-    })
-    .catch((erreur) => console.error('Erreur lors de la mise à jour du bandeau de rappel', erreur));
 }
 
 /**
@@ -142,9 +118,6 @@ function initialiserRappelsParametres() {
 
 // ---- Branchements ---- //
 
-// Clic sur le bandeau → ouverture directe de l'onglet Révision
-document.getElementById('bandeau-rappels').addEventListener('click', () => afficherEcran('revision'));
-
 // Toggle « Activer les rappels » : demande la permission navigateur à l'activation
 document.getElementById('reglage-rappels-actives').addEventListener('change', (evenement) => {
   const caseRappels = evenement.target;
@@ -162,8 +135,8 @@ document.getElementById('reglage-rappels-actives').addEventListener('change', (e
 
   // Le clic sur le toggle est un geste utilisateur : on peut demander la permission ici
   Notification.requestPermission().then((permission) => {
-    // Dans les deux cas, les rappels restent « activés » : le bandeau visuel,
-    // lui, fonctionne sans permission. Seule la notification dépend de la permission.
+    // Dans les deux cas, les rappels restent « activés » : seule la notification
+    // (affichée à l'ouverture de l'app) dépend de la permission.
     localStorage.setItem(CLE_RAPPELS_ACTIVES, 'true');
 
     if (permission === 'granted') {

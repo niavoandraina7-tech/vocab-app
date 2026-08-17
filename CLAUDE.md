@@ -34,7 +34,7 @@ js/db.js              — accès IndexedDB, helpers de dates, catégories par d�
 js/categories.js      — gestion des catégories (arbre, renommer, supprimer, sous-catégories)
 js/mots.js            — liste des mots, recherche, fiche détail, formulaire ajout/édition
 js/revision.js        — logique de révision (niveaux, seuils, liste « Révision classique »)
-js/rappels.js         — bandeau de rappel + notifications navigateur (localStorage)
+js/rappels.js         — notifications navigateur à l'ouverture (localStorage)
 js/vocal.js           — dictée vocale (Web Speech API)
 js/quiz.js            — quiz chronométré + accueil de l'onglet Jeu
 js/export-import.js   — export/import JSON (fusion par ID)
@@ -202,7 +202,7 @@ Helpers de dates partagés (db.js) : `parserDateRevision` (accepte les deux form
 ## Pièges connus
 
 - **Ordre de chargement des scripts** : ne pas exécuter de fonction d'un fichier chargé plus tard au moment du chargement d'un fichier antérieur.
-- `afficherEcran('revision')` peut être appelé depuis le bandeau de rappel ou une notification → affiche l'accueil du Jeu (le quiz), pas la liste.
+- `afficherEcran('revision')` peut être appelé depuis une notification (d'ouverture ou push) → affiche l'accueil du Jeu (le quiz), pas la liste.
 - La fiche détail (`detail`) recharge le mot à chaque ouverture ; `motEnDetailId` sert au bouton « Modifier ».
 - La dictée vocale (Web Speech API) n'est pas supportée partout (ex. Firefox) : les boutons micro et le réglage sont masqués si l'API est absente (géré dans `vocal.js`).
 - Le filtre par catégorie n'existe plus dans l'onglet Liste (déplacé avec la gestion des catégories dans l'onglet « Catégories ») ; le seul filtre restant est celui de l'écran « Révision classique » (`filtre-categorie-revision`).

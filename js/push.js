@@ -9,7 +9,7 @@
 //
 // Ce fichier n'est jamais bloquant : en cas d'échec (pas de VAPID configuré,
 // navigateur sans PushManager, erreur réseau…), l'app continue normalement
-// avec ses mécanismes existants (bandeau + notification d'ouverture).
+// avec la notification d'ouverture (rappels.js).
 
 /**
  * La clé publique VAPID est-elle configurée ?
@@ -100,7 +100,7 @@ async function abonnerPushSiPossible() {
     }
     return true;
   } catch (erreur) {
-    // Non bloquant : bandeau + notifications d'ouverture restent actifs
+    // Non bloquant : la notification d'ouverture (rappels.js) reste active
     console.warn('Abonnement push impossible (non bloquant)', erreur && erreur.message ? erreur.message : erreur);
     return false;
   }

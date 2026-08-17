@@ -6,6 +6,15 @@
   <title>Mon Vocabulaire</title>
   <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="css/style.css">
+  <meta name="theme-color" content="#f5f6f8">
+  <!-- Applique le thème AVANT le premier rendu (évite le flash clair) -->
+  <script>
+    (function () {
+      var mode = localStorage.getItem('modeApparence');
+      var sombre = mode === 'sombre' || (mode !== 'clair' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      document.documentElement.dataset.theme = sombre ? 'sombre' : 'clair';
+    })();
+  </script>
 </head>
 <body>
   <div id="app">
@@ -14,14 +23,18 @@
     <section id="ecran-liste" class="ecran active">
       <header class="entete-ecran">
         <h1>Mon Vocabulaire</h1>
-        <span id="indicateur-sync" class="indicateur-sync" role="status" hidden></span>
+        <div class="entete-actions">
+          <span id="indicateur-sync" class="indicateur-sync" role="status" hidden></span>
+          <button id="btn-ouvrir-recherche" type="button" class="btn-recherche" aria-expanded="false" aria-label="Rechercher un mot" title="Rechercher un mot">🔍</button>
+        </div>
       </header>
-      <!-- Bandeau de rappel : visible quand des mots attendent une révision -->
-      <button id="bandeau-rappels" class="bandeau-rappels" type="button" hidden>
-        <span id="bandeau-rappels-texte"></span>
-        <span class="bandeau-fleche" aria-hidden="true">→</span>
-      </button>
-      <input type="search" id="champ-recherche" placeholder="Rechercher un mot..." autocomplete="off">
+      <!-- Recherche : l'icône s'ouvre en champ de saisie -->
+      <div id="conteneur-recherche" class="conteneur-recherche">
+        <div id="zone-recherche-ouverte" class="zone-recherche-ouverte" hidden>
+          <input type="search" id="champ-recherche" placeholder="Rechercher un mot..." autocomplete="off">
+          <button type="button" id="btn-fermer-recherche" class="btn-fermer-recherche" aria-label="Fermer la recherche">✕</button>
+        </div>
+      </div>
       <div class="legende-niveaux" aria-label="Signification des niveaux de maîtrise">
         <span class="badge badge-nouveau">À apprendre</span>
         <span>jamais révisé</span>
@@ -155,6 +168,18 @@
       <header class="entete-ecran">
         <h1>Paramètres</h1>
       </header>
+      <!-- Apparence : mode sombre / clair / système -->
+      <div class="reglage-ligne">
+        <div>
+          <strong>Apparence</strong>
+          <p class="conseil">Mode sombre, clair ou automatique selon le système.</p>
+        </div>
+      </div>
+      <div class="choix-apparence" role="radiogroup" aria-label="Mode d'affichage">
+        <button type="button" data-theme-choix="system" class="choix-apparence-bouton active" aria-pressed="true">Système</button>
+        <button type="button" data-theme-choix="clair" class="choix-apparence-bouton" aria-pressed="false">Clair</button>
+        <button type="button" data-theme-choix="sombre" class="choix-apparence-bouton" aria-pressed="false">Sombre</button>
+      </div>
       <div id="liste-sections-parametres" class="liste-sections-parametres">
         <button type="button" class="section-parametres-bouton" data-section-parametres="compte">
           <span class="section-icone" aria-hidden="true">👤</span>
@@ -167,8 +192,8 @@
         <button type="button" class="section-parametres-bouton" data-section-parametres="rappels">
           <span class="section-icone" aria-hidden="true">🔔</span>
           <span class="section-texte">
-            <span class="section-titre">Rappels de révision</span>
-            <span class="section-description">Bandeau et notifications navigateur</span>
+          <span class="section-titre">Rappels de révision</span>
+          <span class="section-description">Notifications navigateur et push</span>
           </span>
           <span class="section-fleche" aria-hidden="true">›</span>
         </button>
@@ -235,7 +260,7 @@
         <option value="7">7 jours</option>
       </select>
       <p class="info-rappels" id="info-permission-rappels"></p>
-      <p class="conseil">Limite technique : les notifications ne se déclenchent que lorsque l'app est ouverte ou en arrière-plan récent — jamais de façon garantie quand l'app est totalement fermée, car l'application fonctionne sans serveur. Le bandeau visuel dans l'app, lui, fonctionne toujours, même hors ligne.</p>
+      <p class="conseil">Limite technique : les notifications ne se déclenchent que lorsque l'app est ouverte ou en arrière-plan récent — jamais de façon garantie quand l'app est totalement fermée, car l'application fonctionne sans serveur. Une notification s'affiche à l'ouverture de l'app quand des mots sont en retard, même hors ligne.</p>
     </section>
 
     <!-- Sous-écran : Dictée vocale -->
@@ -300,6 +325,7 @@
 
   <!-- Scripts : ordre critique pour les dépendances globales -->
   <script src="js/config.js"></script>
+  <script src="js/theme.js"></script>
   <script src="js/vendor/supabase.min.js"></script>
   <script src="js/db.js"></script>
   <script src="js/categories.js"></script>

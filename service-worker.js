@@ -7,7 +7,7 @@
 // utilisateurs. Zones délimitées par « >>> … » : gérées par le script.
 
 // >>> CACHE_VERSION_AUTOMATIQUE
-const NOM_CACHE = 'vocab-cache-26c3a1f0f643';
+const NOM_CACHE = 'vocab-cache-16ff76d5907d';
 // >>> FIN_CACHE_VERSION_AUTOMATIQUE
 
 // Tous les fichiers statiques nécessaires au fonctionnement hors ligne.
@@ -17,6 +17,7 @@ const FICHIERS_A_CACHER = [
   'manifest.json',
   'css/style.css',
   'js/config.js',
+  'js/theme.js',
   'js/vendor/supabase.min.js',
   'js/db.js',
   'js/categories.js',

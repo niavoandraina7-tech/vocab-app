@@ -335,9 +335,6 @@ function rafraichirEcranApresSync() {
   const id = ecranActif.id;
   if (id === 'ecran-liste' && typeof afficherListeMots === 'function') {
     afficherListeMots();
-    if (typeof mettreAJourBandeauRappel === 'function') {
-      mettreAJourBandeauRappel();
-    }
   } else if (id === 'ecran-categories' && typeof afficherCategories === 'function') {
     afficherCategories();
   }

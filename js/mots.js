@@ -123,10 +123,47 @@ function afficherListeMots() {
 }
 
 /**
- * Active la recherche en temps réel.
+ * Ferme la recherche : vide le champ, remet la liste complète et réaffiche
+ * le bouton « 🔍 Rechercher un mot ».
+ */
+function fermerRecherche() {
+  const champ = document.getElementById('champ-recherche');
+  const zone = document.getElementById('zone-recherche-ouverte');
+  const bouton = document.getElementById('btn-ouvrir-recherche');
+  champ.value = '';
+  afficherListeMots();
+  zone.hidden = true;
+  bouton.hidden = false;
+  bouton.setAttribute('aria-expanded', 'false');
+  bouton.focus();
+}
+
+/**
+ * Active la recherche : le bouton se déplie en champ de saisie (focus immédiat,
+ * clavier ouvert sur mobile), filtrage en temps réel, Échap ou ✕ pour refermer.
  */
 function initialiserRecherche() {
-  document.getElementById('champ-recherche').addEventListener('input', () => afficherListeMots());
+  const bouton = document.getElementById('btn-ouvrir-recherche');
+  const zone = document.getElementById('zone-recherche-ouverte');
+  const champ = document.getElementById('champ-recherche');
+  const fermer = document.getElementById('btn-fermer-recherche');
+
+  champ.addEventListener('input', () => afficherListeMots());
+
+  bouton.addEventListener('click', () => {
+    zone.hidden = false;
+    bouton.hidden = true;
+    bouton.setAttribute('aria-expanded', 'true');
+    champ.focus();
+  });
+
+  champ.addEventListener('keydown', (evenement) => {
+    if (evenement.key === 'Escape') {
+      fermerRecherche();
+    }
+  });
+
+  fermer.addEventListener('click', fermerRecherche);
 }
 
 initialiserRecherche();
