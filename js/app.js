@@ -26,6 +26,10 @@ function afficherEcran(nomEcran) {
   if (nomEcran === 'liste') {
     afficherListeMots();
     mettreAJourBandeauRappel();
+    // Indicateur de synchronisation (état + modifications en attente)
+    if (typeof mettreAJourIndicateurSync === 'function') {
+      mettreAJourIndicateurSync();
+    }
   }
 
   // Recharge l'arbre des catégories à chaque affichage de l'écran Catégories
@@ -38,8 +42,11 @@ function afficherEcran(nomEcran) {
     afficherEcranRevision();
   }
 
-  // Remet l'écran Paramètres en état (rappels, langue de dictée, messages)
+  // Remet l'écran Paramètres en état (compte, rappels, langue de dictée, messages)
   if (nomEcran === 'parametres') {
+    if (typeof afficherZoneCompte === 'function') {
+      afficherZoneCompte();
+    }
     initialiserRappelsParametres();
     initialiserVocalParametres();
   }
@@ -67,10 +74,17 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-// Initialisation au premier chargement : ouverture de la base, catégories par défaut, liste
+// Initialisation au premier chargement : ouverture de la base, catégories par défaut,
+// authentification (restauration de session) et synchronisation, puis affichage.
 obtenirBase()
   .then(initialiserCategoriesParDefaut)
   .then(() => {
+    if (typeof initialiserAuth === 'function') {
+      initialiserAuth();
+    }
+    if (typeof initialiserSync === 'function') {
+      initialiserSync();
+    }
     afficherListeMots();
     // À chaque ouverture de l'app : bandeau de rappel + notification éventuelle
     mettreAJourBandeauRappel();

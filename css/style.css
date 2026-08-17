@@ -980,6 +980,59 @@ button:disabled {
   font-weight: 600;
 }
 
+/* ---- V3 : authentification & synchronisation Supabase ---- */
+.indicateur-sync {
+  display: inline-block;
+  font-size: 0.75rem;
+  color: var(--couleur-texte-secondaire);
+  background-color: #f1f3f4;
+  border-radius: 999px;
+  padding: 4px 10px;
+  margin-bottom: 12px;
+}
+
+.message-connexion {
+  padding: 10px 14px;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  font-size: 0.9rem;
+}
+
+.message-connexion.message-info {
+  background-color: #e8f0fe;
+  color: #174ea6;
+}
+
+.message-connexion.message-erreur {
+  background-color: #fce8e6;
+  color: #d93025;
+}
+
+.compte-email {
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.statut-sync {
+  margin-bottom: 8px;
+}
+
+.actions-compte {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.btn-lien {
+  background: none;
+  color: var(--couleur-primaire);
+  padding: 4px;
+  min-height: 32px;
+  font-size: 0.85rem;
+  text-decoration: underline;
+  margin-top: 4px;
+}
+
 /* ---- Desktop : barre de navigation sur le côté ---- */
 @media (min-width: 768px) {
   #barre-navigation {

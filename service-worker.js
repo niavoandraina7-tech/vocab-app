@@ -3,13 +3,15 @@
 // Stratégie de mise à jour : quand le contenu de l'app change, incrémenter
 // NOM_CACHE (vocab-cache-v2, v3, ...) pour forcer le re-téléchargement.
 
-const NOM_CACHE = 'vocab-cache-v8';
+const NOM_CACHE = 'vocab-cache-v9';
 
 // Tous les fichiers statiques nécessaires au fonctionnement hors ligne
 const FICHIERS_A_CACHER = [
   'index.html',
   'manifest.json',
   'css/style.css',
+  'js/config.js',
+  'js/vendor/supabase.min.js',
   'js/db.js',
   'js/categories.js',
   'js/mots.js',
@@ -18,6 +20,8 @@ const FICHIERS_A_CACHER = [
   'js/vocal.js',
   'js/quiz.js',
   'js/export-import.js',
+  'js/auth.js',
+  'js/sync.js',
   'js/app.js',
   'icons/icon-192.png',
   'icons/icon-512.png'
@@ -48,6 +52,13 @@ self.addEventListener('activate', (evenement) => {
 // Fetch : stratégie « cache d'abord, réseau en secours »
 self.addEventListener('fetch', (evenement) => {
   const requete = evenement.request;
+
+  // IMPORTANT : les appels vers Supabase (auth, REST) ne doivent JAMAIS être
+  // servis depuis le cache ni mis en cache — ils doivent toujours aller au
+  // réseau pour garantir des données fraîches et une session valide.
+  if (requete.url.includes('supabase.co')) {
+    return;
+  }
 
   // Requêtes de navigation : servir la page en cache pour un rechargement hors ligne
   if (requete.mode === 'navigate') {

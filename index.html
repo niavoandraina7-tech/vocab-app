@@ -14,6 +14,7 @@
     <section id="ecran-liste" class="ecran active">
       <header class="entete-ecran">
         <h1>Mon Vocabulaire</h1>
+        <span id="indicateur-sync" class="indicateur-sync" role="status" hidden></span>
       </header>
       <!-- Bandeau de rappel : visible quand des mots attendent une révision -->
       <button id="bandeau-rappels" class="bandeau-rappels" type="button" hidden>
@@ -116,12 +117,41 @@
       <div id="contenu-revision"></div>
     </section>
 
+    <!-- Écran : Connexion / Inscription (Supabase) -->
+    <section id="ecran-connexion" class="ecran">
+      <header class="entete-ecran">
+        <button id="btn-retour-connexion" class="btn-retour" type="button">← Retour</button>
+        <h1>Connexion / Inscription</h1>
+      </header>
+      <p class="conseil">Connecte-toi pour synchroniser tes données entre appareils. Tu peux aussi continuer sans compte (mode local uniquement).</p>
+      <div id="message-connexion" class="message-connexion" role="status" hidden></div>
+      <form id="form-connexion">
+        <label for="champ-email">Email</label>
+        <input type="email" id="champ-email" required autocomplete="email" placeholder="toi@exemple.com">
+        <label for="champ-motdepasse">Mot de passe</label>
+        <input type="password" id="champ-motdepasse" required autocomplete="current-password" placeholder="••••••••">
+        <div class="actions-formulaire">
+          <button type="submit" id="btn-se-connecter">Se connecter</button>
+          <button type="button" id="btn-sinscrire" class="btn-secondaire">Créer un compte</button>
+        </div>
+      </form>
+      <p class="conseil" style="margin-top: 16px;">
+        <button type="button" id="btn-mode-local" class="btn-secondaire">Continuer sans compte (mode local)</button>
+      </p>
+    </section>
+
     <!-- Écran : Paramètres -->
     <section id="ecran-parametres" class="ecran">
       <header class="entete-ecran">
         <h1>Paramètres</h1>
       </header>
       <div id="contenu-parametres">
+        <!-- Section Compte / Synchronisation -->
+        <h2 id="section-compte">Compte & Synchronisation</h2>
+        <div id="zone-compte">
+          <!-- Rempli dynamiquement par auth.js : soit formulaire connexion, soit infos utilisateur + sync -->
+        </div>
+
         <h2>Rappels de révision</h2>
         <div class="reglage-ligne">
           <div>
@@ -173,7 +203,9 @@
     <button class="nav-bouton" data-ecran="parametres" type="button">Paramètres</button>
   </nav>
 
-  <!-- Scripts : ordre db -> categories -> mots -> revision -> export-import -> app -->
+  <!-- Scripts : ordre critique pour les dépendances globales -->
+  <script src="js/config.js"></script>
+  <script src="js/vendor/supabase.min.js"></script>
   <script src="js/db.js"></script>
   <script src="js/categories.js"></script>
   <script src="js/mots.js"></script>
@@ -182,6 +214,8 @@
   <script src="js/vocal.js"></script>
   <script src="js/quiz.js"></script>
   <script src="js/export-import.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/sync.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

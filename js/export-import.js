@@ -50,6 +50,24 @@ function comparerDates(a, b) {
 function fusionnerImport(donnees) {
   const resume = { motsAjoutes: 0, motsMisAJour: 0, categoriesAjoutees: 0, categoriesMisesAJour: 0 };
 
+  // Normalise les enregistrements importés : l'id utilisateur du fichier n'est
+  // jamais importé tel quel (il est réattribué à l'utilisateur qui importe, ou
+  // laissé nul en mode invité) et les données importées repassent en attente de
+  // synchronisation pour être poussées lors de la prochaine sync.
+  const userId = (typeof obtenirUtilisateurCourantId === 'function')
+    ? obtenirUtilisateurCourantId()
+    : null;
+  const normaliser = (enregistrement) => ({
+    ...enregistrement,
+    userId,
+    syncStatus: 'en_attente',
+    supprime: false
+  });
+  donnees = {
+    mots: (donnees.mots || []).map(normaliser),
+    categories: (donnees.categories || []).map(normaliser)
+  };
+
   return obtenirToutesLesCategories().then((categoriesLocales) => {
     const parIdCategories = new Map(categoriesLocales.map((c) => [c.id, c]));
 

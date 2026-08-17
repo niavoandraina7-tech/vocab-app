@@ -1,0 +1,7 @@
+# Supabase config - contient des clés API
+js/config.js
+
+# Fichiers locaux divers
+*.log
+.DS_Store
+Thumbs.db
