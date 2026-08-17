@@ -10,54 +10,92 @@
 }
 
 :root {
-  --couleur-primaire: #1a73e8;
-  --couleur-fond: #f5f6f8;
-  --couleur-texte: #202124;
-  --couleur-texte-secondaire: #5f6368;
-  --couleur-bordure: #dadce0;
+  /* Palette « Bleu ciel » — mode clair (Étape 01 du cahier des charges) */
+  --couleur-primaire: #2e9be6;
+  --couleur-primaire-hover: #2582c4;
+  --couleur-fond: #f3f8fc;
+  --couleur-texte: #12232f;
+  --couleur-texte-secondaire: #5a7484;
+  --couleur-bordure: #d7e6ee;
   /* Variables sémantiques — servent aussi au mode sombre (voir plus bas) */
   --couleur-surface: #ffffff;
   --couleur-surface-mutee: #f1f3f4;
   --couleur-surface-legere: #f8f9fa;
   --couleur-sur-primaire: #ffffff;
-  --couleur-info-fond: #e8f0fe;
-  --couleur-info-texte: #174ea6;
+  --couleur-info-fond: #e4f1fa;
+  --couleur-info-texte: #1d6fa5;
   --couleur-erreur-fond: #fce8e6;
   --couleur-erreur-texte: #d93025;
   --couleur-danger: #d93025;
-  --couleur-reussi-fond: #e6f4ea;
-  --couleur-reussi: #188038;
-  --couleur-suivi-fond: #fef7e0;
-  --couleur-suivi-texte: #b06000;
+  --couleur-reussi-fond: #e1f5ee;
+  --couleur-reussi: #0f6e56;
+  --couleur-suivi-fond: #fdf2dc;
+  --couleur-suivi-texte: #93650a;
   --couleur-neutre-fort: #bdc1c6;
   --couleur-neutre: #9aa0a6;
-  --couleur-actif-fond: rgba(26, 115, 232, 0.12);
+  --couleur-actif-fond: rgba(46, 155, 230, 0.12);
+  /* Badges de niveau de maîtrise (Étape 01 §3) */
+  --badge-nouveau-fond: #e4f1fa;
+  --badge-nouveau-texte: #1d6fa5;
+  --badge-en_cours-fond: #fdf2dc;
+  --badge-en_cours-texte: #93650a;
+  --badge-acquis-fond: #e1f5ee;
+  --badge-acquis-texte: #0f6e56;
+  /* Boutons colorés (texte dessus = var(--couleur-sur-primaire)) */
+  --couleur-facile: #188038;
+  --couleur-difficile: #b06000;
+  --couleur-quiz: #7b1fa2;
+  --couleur-quiz-hover: #6a1b9a;
+  --couleur-progression: #f9ab00;
+  /* Halo de focus des champs de saisie */
+  --couleur-halo-focus: rgba(46, 155, 230, 0.15);
+  --couleur-bordure-info: rgba(46, 155, 230, 0.3);
+  --couleur-bordure-erreur: rgba(217, 48, 37, 0.3);
   color-scheme: light;
 }
 
 /* ---- Mode sombre ---- */
 :root[data-theme='sombre'] {
-  --couleur-primaire: #8ab4f8;
-  --couleur-fond: #1b1d1f;
-  --couleur-texte: #e8eaed;
-  --couleur-texte-secondaire: #9aa0a6;
-  --couleur-bordure: #3c4043;
-  --couleur-surface: #282a2d;
-  --couleur-surface-mutee: #333537;
-  --couleur-surface-legere: #2e3134;
+  /* Palette « Bleu ciel » — mode sombre (Étape 01 du cahier des charges) */
+  --couleur-primaire: #63c0f5;
+  --couleur-primaire-hover: #7ecdf7;
+  --couleur-fond: #0b1720;
+  --couleur-texte: #eaf3f8;
+  --couleur-texte-secondaire: #93aab8;
+  --couleur-bordure: #22384a;
+  --couleur-surface: #132430;
+  --couleur-surface-mutee: #1a2c3b;
+  --couleur-surface-legere: #16283a;
   --couleur-sur-primaire: #202124;
-  --couleur-info-fond: #1f3148;
-  --couleur-info-texte: #a8c7fa;
+  --couleur-info-fond: #1b3446;
+  --couleur-info-texte: #7fc4f0;
   --couleur-erreur-fond: #442624;
   --couleur-erreur-texte: #f28b82;
-  --couleur-danger: #d93025;
-  --couleur-reussi-fond: #17301f;
-  --couleur-reussi: #81c995;
-  --couleur-suivi-fond: #3a2e15;
-  --couleur-suivi-texte: #fdd663;
+  --couleur-danger: #e5534b;
+  --couleur-reussi-fond: #123a2e;
+  --couleur-reussi: #5dcaa5;
+  --couleur-suivi-fond: #3a2c10;
+  --couleur-suivi-texte: #f0b84e;
   --couleur-neutre-fort: #5f6368;
   --couleur-neutre: #80868b;
-  --couleur-actif-fond: rgba(138, 180, 248, 0.15);
+  --couleur-actif-fond: rgba(99, 192, 245, 0.15);
+  /* Badges de niveau de maîtrise (Étape 01 §3) */
+  --badge-nouveau-fond: #1b3446;
+  --badge-nouveau-texte: #7fc4f0;
+  --badge-en_cours-fond: #3a2c10;
+  --badge-en_cours-texte: #f0b84e;
+  --badge-acquis-fond: #123a2e;
+  --badge-acquis-texte: #5dcaa5;
+  /* Boutons colorés : fonds éclaircis + texte foncé (--couleur-sur-primaire) */
+  --couleur-facile: #81c995;
+  --couleur-difficile: #f9ab00;
+  --couleur-quiz: #ba68c8;
+  --couleur-quiz-hover: #ab47bc;
+  --couleur-progression: #fdd663;
+  /* Halo de focus bleu clair, visible sur fond sombre */
+  --couleur-halo-focus: rgba(99, 192, 245, 0.25);
+  --couleur-bordure-info: rgba(99, 192, 245, 0.35);
+  --couleur-bordure-erreur: rgba(242, 139, 130, 0.4);
   color-scheme: dark;
 }
 
@@ -111,6 +149,12 @@ button {
 
 button:active {
   opacity: 0.85;
+}
+
+/* Survol (desktop) : les boutons principaux (fond primaire) passent à la teinte hover.
+   Exclus : les boutons qui ont leur propre fond (secondaires, nav, quiz, révision…). */
+button:hover:not(:disabled):not(.btn-secondaire):not(.btn-retour):not(.nav-bouton):not(.btn-lien):not(.btn-mini):not(.btn-micro):not(.btn-recherche):not(.btn-fermer-recherche):not(.btn-fermer-menu):not(.connexion-onglet):not(.choix-apparence-bouton):not(.btn-quiz-lancer):not(.btn-revision):not(.btn-quiz-je-savais):not(.btn-quiz-pas-su):not(.btn-date-revision):not(.section-parametres-bouton):not(.btn-danger) {
+  background-color: var(--couleur-primaire-hover);
 }
 
 .btn-secondaire {
@@ -450,7 +494,7 @@ legend {
 #champ-recherche:focus {
   outline: none;
   border-color: var(--couleur-primaire);
-  box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.15);
+  box-shadow: 0 0 0 3px var(--couleur-halo-focus);
 }
 
 .btn-fermer-recherche {
@@ -524,18 +568,18 @@ legend {
 }
 
 .badge-nouveau {
-  background-color: var(--couleur-info-fond);
-  color: var(--couleur-primaire);
+  background-color: var(--badge-nouveau-fond);
+  color: var(--badge-nouveau-texte);
 }
 
 .badge-en_cours {
-  background-color: var(--couleur-suivi-fond);
-  color: var(--couleur-suivi-texte);
+  background-color: var(--badge-en_cours-fond);
+  color: var(--badge-en_cours-texte);
 }
 
 .badge-acquis {
-  background-color: var(--couleur-reussi-fond);
-  color: var(--couleur-reussi);
+  background-color: var(--badge-acquis-fond);
+  color: var(--badge-acquis-texte);
 }
 
 /* Légende des niveaux (écran Liste) : explique les badges aux nouveaux utilisateurs */
@@ -703,7 +747,7 @@ legend {
 
 .btn-micro.ecoute {
   background-color: var(--couleur-danger);
-  color: #ffffff;
+  color: var(--couleur-sur-primaire);
   border-color: var(--couleur-danger);
   animation: pulse-micro 1s infinite;
 }
@@ -718,7 +762,7 @@ legend {
   font-weight: 500;
   color: var(--couleur-primaire);
   background-color: var(--couleur-info-fond);
-  border: 1px solid rgba(26, 115, 232, 0.3);
+  border: 1px solid var(--couleur-bordure-info);
   border-radius: 8px;
   padding: 10px 12px;
   margin-bottom: 12px;
@@ -727,7 +771,7 @@ legend {
 .statut-vocal.statut-erreur {
   color: var(--couleur-erreur-texte);
   background-color: var(--couleur-erreur-fond);
-  border-color: rgba(217, 48, 37, 0.3);
+  border-color: var(--couleur-bordure-erreur);
 }
 
 /* ---- Paramètres (export / import) ---- */
@@ -802,12 +846,11 @@ button:disabled {
 }
 
 .btn-revision.btn-facile {
-  /* Vert constant (texte blanc dessus) — même valeur en mode sombre */
-  background-color: #188038;
+  background-color: var(--couleur-facile);
 }
 
 .btn-revision.btn-difficile {
-  background-color: #b06000;
+  background-color: var(--couleur-difficile);
 }
 
 .btn-revision.btn-echec {
@@ -830,11 +873,11 @@ button:disabled {
 .btn-quiz-lancer {
   width: 100%;
   margin-bottom: 16px;
-  background-color: #7b1fa2;
+  background-color: var(--couleur-quiz);
 }
 
 .btn-quiz-lancer:hover {
-  background-color: #6a1b9a;
+  background-color: var(--couleur-quiz-hover);
 }
 
 .quiz-titre {
@@ -918,8 +961,7 @@ button:disabled {
   min-height: 56px;
   font-size: 1.1rem;
   font-weight: 600;
-  /* Vert constant (texte blanc dessus) — même valeur en mode sombre */
-  background-color: #188038;
+  background-color: var(--couleur-facile);
 }
 
 .btn-quiz-pas-su {
@@ -1212,7 +1254,7 @@ button:disabled {
 #form-changer-motdepasse input:focus {
   outline: none;
   border-color: var(--couleur-primaire);
-  box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.15);
+  box-shadow: 0 0 0 3px var(--couleur-halo-focus);
 }
 
 .btn-lien {
@@ -1323,7 +1365,7 @@ button:disabled {
 #form-connexion input:focus {
   outline: none;
   border-color: var(--couleur-primaire);
-  box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.15);
+  box-shadow: 0 0 0 3px var(--couleur-halo-focus);
 }
 
 #btn-se-connecter {
@@ -1483,7 +1525,7 @@ button:disabled {
 }
 
 .remplissage-en_cours {
-  background-color: #f9ab00;
+  background-color: var(--couleur-progression);
 }
 
 .remplissage-acquis {

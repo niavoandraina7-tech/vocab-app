@@ -42,7 +42,7 @@ function appliquerTheme() {
 
   const meta = document.querySelector('meta[name="theme-color"]');
   if (meta) {
-    meta.setAttribute('content', theme === 'sombre' ? '#1b1d1f' : '#f5f6f8');
+    meta.setAttribute('content', theme === 'sombre' ? '#0b1720' : '#f3f8fc');
   }
 
   const mode = modeApparenceActuel();

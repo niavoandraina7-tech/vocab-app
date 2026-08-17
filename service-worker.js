@@ -7,7 +7,7 @@
 // utilisateurs. Zones délimitées par « >>> … » : gérées par le script.
 
 // >>> CACHE_VERSION_AUTOMATIQUE
-const NOM_CACHE = 'vocab-cache-16ff76d5907d';
+const NOM_CACHE = 'vocab-cache-570dfcbe4a59';
 // >>> FIN_CACHE_VERSION_AUTOMATIQUE
 
 // Tous les fichiers statiques nécessaires au fonctionnement hors ligne.

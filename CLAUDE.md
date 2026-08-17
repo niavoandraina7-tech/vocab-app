@@ -40,6 +40,7 @@ js/quiz.js            — quiz chronométré + accueil de l'onglet Jeu
 js/export-import.js   — export/import JSON (fusion par ID)
 js/statistiques.js    — écran Statistiques (Paramètres) : progression, série de jours, répartition
 js/push.js            — abonnement Web Push (VAPID) + enregistrement dans Supabase
+js/theme.js           — mode d'affichage clair/sombre/système (sélecteur Paramètres, anti-flash)
 js/vendor/supabase.min.js — SDK supabase-js vendu localement (hors-ligne)
 js/config.js          — configuration Supabase (URL + clé anon) — IGNORÉ par git
 js/auth.js            — authentification Supabase (client, session, écran connexion, section Compte)
@@ -61,6 +62,16 @@ Toutes les fonctions sont **globales** (pas de modules ES). L'ordre dans `index.
 `config.js` → `vendor/supabase.min.js` → `db.js` → `categories.js` → `mots.js` → `revision.js` → `rappels.js` → `vocal.js` → `quiz.js` → `export-import.js` → `auth.js` → `sync.js` → `app.js`
 
 Une fonction d'un fichier appelée dans un autre ne doit être exécutée qu'au **runtime** (jamais au chargement).
+
+## Mode sombre (theme.js + variables CSS)
+
+- **Palette « Bleu ciel »** (cahier des charges `process/vocab-app/mode sombre/ETAPE-01-palette-couleurs.md`, validée) : bleu primaire `#2e9be6` clair / `#63c0f5` sombre, fond `#f3f8fc` / `#0b1720`, surface `#ffffff` / `#132430`, texte `#12232f` / `#eaf3f8`, bordure `#d7e6ee` / `#22384a`, danger `#d93025` / `#e5534b`. Primaire hover via `--couleur-primaire-hover` (`#2582c4` / `#7ecdf7`), appliqué aux boutons principaux (exclusion des boutons à fond propre via une longue liste `:not()`).
+- Le thème est appliqué sur `<html data-theme="clair|sombre">` : toutes les couleurs passent par des **variables sémantiques** dans `:root` et `:root[data-theme='sombre']` de `css/style.css`. Un **script inline dans `<head>`** (index.html) applique le thème persisté avant le premier rendu pour éviter le flash clair.
+- `js/theme.js` : choix persisté dans `localStorage` (`modeApparence` : `'system'` | `'clair'` | `'sombre'`, défaut `system` — suit alors `prefers-color-scheme`), sélecteur segmenté dans **Paramètres** (boutons `[data-theme-choix]`, classe `.active` + `aria-pressed`), suivi en direct du changement système, et `meta[name=theme-color]` adapté (`#f3f8fc` clair / `#0b1720` sombre).
+- **Badges de niveau** (Étape 01 §3) : variables dédiées `--badge-nouveau-fond/-texte`, `--badge-en_cours-fond/-texte`, `--badge-acquis-fond/-texte` (clair : `#e4f1fa`/`#1d6fa5`, `#fdf2dc`/`#93650a`, `#e1f5ee`/`#0f6e56` ; sombre : `#1b3446`/`#7fc4f0`, `#3a2c10`/`#f0b84e`, `#123a2e`/`#5dcaa5`).
+- **Boutons colorés** (évaluation de révision, quiz, barres) : variables dédiées avec variante sombre éclaircie + texte foncé dessus (`--couleur-facile`/`-difficile`/`-quiz`/`-quiz-hover`/`-progression`, texte via `--couleur-sur-primaire`) — le rouge `--couleur-danger` devient `#e5534b` en sombre.
+- **Halos et bordures** : `--couleur-halo-focus` (focus des champs), `--couleur-bordure-info` / `--couleur-bordure-erreur` (statuts vocal/dictée) — bleus dérivés du primaire actuel.
+- Règle : **aucune couleur en dur dans le CSS ni dans le JS** (sauf définitions dans `:root`) — toute nouvelle couleur passe par une variable sémantique.
 
 ## Navigation et écrans
 

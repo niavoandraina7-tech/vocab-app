@@ -130,6 +130,14 @@ begin
     create policy "push_delete_own" on public.push_subscriptions
       for delete using (user_id = auth.uid());
   end if;
+  -- IMPORTANT : l'upsert client utilise onConflict 'endpoint' → INSERT ... ON
+  -- CONFLICT DO UPDATE. Sous RLS, cette forme exige la politique UPDATE en PLUS
+  -- de la politique INSERT, sinon le ré-abonnement (endpoint déjà enregistré)
+  -- échoue silencieusement (console.warn).
+  if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'push_subscriptions' and policyname = 'push_update_own') then
+    create policy "push_update_own" on public.push_subscriptions
+      for update using (user_id = auth.uid()) with check (user_id = auth.uid());
+  end if;
 end $$;
 
 -- ---- Vérification (facultatif) ----
