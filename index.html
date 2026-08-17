@@ -118,26 +118,39 @@
     </section>
 
     <!-- Écran : Connexion / Inscription (Supabase) -->
+    <!-- La barre de navigation est masquée sur cet écran (classe .sans-navigation sur <body>) -->
     <section id="ecran-connexion" class="ecran">
-      <header class="entete-ecran">
-        <button id="btn-retour-connexion" class="btn-retour" type="button">← Retour</button>
-        <h1>Connexion / Inscription</h1>
-      </header>
-      <p class="conseil">Connecte-toi pour synchroniser tes données entre appareils. Tu peux aussi continuer sans compte (mode local uniquement).</p>
-      <div id="message-connexion" class="message-connexion" role="status" hidden></div>
-      <form id="form-connexion">
-        <label for="champ-email">Email</label>
-        <input type="email" id="champ-email" required autocomplete="email" placeholder="toi@exemple.com">
-        <label for="champ-motdepasse">Mot de passe</label>
-        <input type="password" id="champ-motdepasse" required autocomplete="current-password" placeholder="••••••••">
-        <div class="actions-formulaire">
-          <button type="submit" id="btn-se-connecter">Se connecter</button>
-          <button type="button" id="btn-sinscrire" class="btn-secondaire">Créer un compte</button>
+      <button id="btn-retour-connexion" class="btn-retour" type="button">← Retour</button>
+
+      <div class="connexion-conteneur">
+        <div class="connexion-entete">
+          <span class="connexion-logo" aria-hidden="true">📖</span>
+          <h1>Mon Vocabulaire</h1>
+          <p class="conseil">Connecte-toi pour synchroniser tes mots entre tous tes appareils.</p>
         </div>
-      </form>
-      <p class="conseil" style="margin-top: 16px;">
-        <button type="button" id="btn-mode-local" class="btn-secondaire">Continuer sans compte (mode local)</button>
-      </p>
+
+        <div class="connexion-carte">
+          <div class="connexion-onglets" role="tablist" aria-label="Connexion ou inscription">
+            <button type="button" id="btn-onglet-connexion" class="connexion-onglet active" role="tab" aria-selected="true">Connexion</button>
+            <button type="button" id="btn-onglet-inscription" class="connexion-onglet" role="tab" aria-selected="false">Inscription</button>
+          </div>
+
+          <div id="message-connexion" class="message-connexion" role="status" hidden></div>
+
+          <form id="form-connexion">
+            <label for="champ-email">Adresse email</label>
+            <input type="email" id="champ-email" required autocomplete="email" placeholder="toi@exemple.com">
+
+            <label for="champ-motdepasse">Mot de passe</label>
+            <input type="password" id="champ-motdepasse" required autocomplete="current-password" placeholder="••••••••">
+
+            <button type="submit" id="btn-se-connecter">Se connecter</button>
+            <button type="button" id="btn-motdepasse-oublie" class="btn-lien" hidden>Mot de passe oublié ?</button>
+          </form>
+        </div>
+
+        <button type="button" id="btn-mode-local" class="btn-mode-local">Continuer sans compte (mode local)</button>
+      </div>
     </section>
 
     <!-- Écran : Paramètres -->

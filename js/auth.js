@@ -287,18 +287,58 @@ function afficherZoneCompte() {
 // deux fois.
 let ecranConnexionBranche = false;
 
+// Mode courant de l'écran Connexion : 'connexion' ou 'inscription'
+let modeConnexion = 'connexion';
+
+/**
+ * Bascule l'écran Connexion entre les modes « Connexion » et « Inscription »
+ * (onglets visuels) : met à jour les onglets, le libellé du bouton principal
+ * et les champs (autocomplete), et efface le message d'état.
+ * @param {'connexion'|'inscription'} mode
+ */
+function definirModeConnexion(mode) {
+  modeConnexion = mode;
+  const ongletConnexion = document.getElementById('btn-onglet-connexion');
+  const ongletInscription = document.getElementById('btn-onglet-inscription');
+  const boutonPrincipal = document.getElementById('btn-se-connecter');
+  const lienMdp = document.getElementById('btn-motdepasse-oublie');
+  const champMotDePasse = document.getElementById('champ-motdepasse');
+
+  const estInscription = mode === 'inscription';
+  ongletConnexion.classList.toggle('active', !estInscription);
+  ongletConnexion.setAttribute('aria-selected', String(!estInscription));
+  ongletInscription.classList.toggle('active', estInscription);
+  ongletInscription.setAttribute('aria-selected', String(estInscription));
+
+  boutonPrincipal.textContent = estInscription ? 'Créer mon compte' : 'Se connecter';
+  lienMdp.hidden = estInscription;
+  champMotDePasse.autocomplete = estInscription ? 'new-password' : 'current-password';
+
+  effacerMessageConnexion();
+}
+
 function brancherEcranConnexion() {
   if (ecranConnexionBranche) {
     return;
   }
   ecranConnexionBranche = true;
 
+  // La soumission déclenche la connexion ou l'inscription selon l'onglet actif
   document.getElementById('form-connexion').addEventListener('submit', (evenement) => {
     evenement.preventDefault();
-    seConnecter();
+    if (modeConnexion === 'inscription') {
+      sinscrire();
+    } else {
+      seConnecter();
+    }
   });
 
-  document.getElementById('btn-sinscrire').addEventListener('click', sinscrire);
+  // Bascule entre les deux modes
+  document.getElementById('btn-onglet-connexion').addEventListener('click', () => definirModeConnexion('connexion'));
+  document.getElementById('btn-onglet-inscription').addEventListener('click', () => definirModeConnexion('inscription'));
+
+  // « Mot de passe oublié ? » (visible en mode Connexion uniquement)
+  document.getElementById('btn-motdepasse-oublie').addEventListener('click', motDePasseOublie);
 
   document.getElementById('btn-retour-connexion').addEventListener('click', () => {
     effacerMessageConnexion();
@@ -310,13 +350,8 @@ function brancherEcranConnexion() {
     afficherEcran('parametres');
   });
 
-  // « Mot de passe oublié ? » (lien discret sous le formulaire)
-  const lienMdp = document.createElement('button');
-  lienMdp.type = 'button';
-  lienMdp.className = 'btn-lien';
-  lienMdp.textContent = 'Mot de passe oublié ?';
-  lienMdp.addEventListener('click', motDePasseOublie);
-  document.getElementById('form-connexion').appendChild(lienMdp);
+  // État initial : onglet Connexion actif
+  definirModeConnexion('connexion');
 }
 
 // ---- Initialisation ----

@@ -10,6 +10,11 @@ function afficherEcran(nomEcran) {
     arreterQuiz();
   }
 
+  // L'écran d'authentification est un écran dédié : on masque la barre de
+  // navigation (classe .sans-navigation sur <body>) pour garder le focus
+  // sur la connexion/inscription.
+  document.body.classList.toggle('sans-navigation', nomEcran === 'connexion');
+
   // Masque tous les écrans, puis affiche celui demandé
   document.querySelectorAll('.ecran').forEach((section) => {
     section.classList.toggle('active', section.id === `ecran-${nomEcran}`);

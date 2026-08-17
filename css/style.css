@@ -1033,6 +1033,129 @@ button:disabled {
   margin-top: 4px;
 }
 
+/* ---- Écran d'authentification : masquage de la navigation ---- */
+/* Pendant la connexion/inscription, la barre de navigation est masquée et le
+   contenu reprend tout l'espace (le padding bas prévu pour la barre disparaît). */
+.sans-navigation #barre-navigation {
+  display: none;
+}
+
+.sans-navigation #app {
+  padding-bottom: 16px;
+}
+
+/* ---- Écran d'authentification : design (carte centrée, onglets) ---- */
+#ecran-connexion {
+  max-width: 440px;
+  margin: 0 auto;
+}
+
+.connexion-conteneur {
+  display: flex;
+  flex-direction: column;
+}
+
+.connexion-entete {
+  text-align: center;
+  margin: 8px 0 20px;
+}
+
+.connexion-logo {
+  display: block;
+  font-size: 2.6rem;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+.connexion-entete h1 {
+  margin-bottom: 6px;
+}
+
+.connexion-carte {
+  background-color: #ffffff;
+  border: 1px solid var(--couleur-bordure);
+  border-radius: 14px;
+  padding: 18px 18px 22px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.07);
+}
+
+.connexion-onglets {
+  display: flex;
+  gap: 4px;
+  background-color: #f1f3f4;
+  border-radius: 10px;
+  padding: 4px;
+  margin-bottom: 16px;
+}
+
+.connexion-onglet {
+  flex: 1;
+  min-height: 40px;
+  padding: 8px 12px;
+  font-weight: 500;
+  font-size: 0.95rem;
+  background: transparent;
+  color: var(--couleur-texte-secondaire);
+  border-radius: 8px;
+}
+
+.connexion-onglet.active {
+  background-color: #ffffff;
+  color: var(--couleur-primaire);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+#form-connexion label {
+  display: block;
+  font-weight: 500;
+  font-size: 0.9rem;
+  margin-bottom: 6px;
+}
+
+#form-connexion input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px 14px;
+  border: 1px solid var(--couleur-bordure);
+  border-radius: 10px;
+  font-size: 1rem;
+  font-family: inherit;
+  margin-bottom: 14px;
+  background-color: #ffffff;
+  color: var(--couleur-texte);
+}
+
+#form-connexion input:focus {
+  outline: none;
+  border-color: var(--couleur-primaire);
+  box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.15);
+}
+
+#btn-se-connecter {
+  width: 100%;
+  min-height: 48px;
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+#btn-motdepasse-oublie {
+  display: block;
+  margin: 10px auto 0;
+}
+
+.btn-mode-local {
+  width: 100%;
+  background: transparent;
+  color: var(--couleur-texte-secondaire);
+  border: 1px dashed var(--couleur-bordure);
+  margin-top: 18px;
+}
+
+.btn-mode-local:hover {
+  color: var(--couleur-primaire);
+  border-color: var(--couleur-primaire);
+}
+
 /* ---- Desktop : barre de navigation sur le côté ---- */
 @media (min-width: 768px) {
   #barre-navigation {
