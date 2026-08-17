@@ -556,9 +556,15 @@ function initialiserAuth() {
       const sessionExpiree = !deconnexionExplicite;
       deconnexionExplicite = false;
 
+      // Le userId doit être capturé avant de vider l'utilisateur courant
+      // (desabonnerPush en a besoin pour nettoyer Supabase).
+      const userIdAvantDeconnexion = utilisateurCourant ? utilisateurCourant.id : null;
       utilisateurCourant = null;
       if (typeof arreterSync === 'function') {
         arreterSync();
+      }
+      if (typeof desabonnerPush === 'function') {
+        desabonnerPush(userIdAvantDeconnexion);
       }
       afficherZoneCompte();
       // Retour à la page de connexion (mur de connexion : seul un compte donne accès)
@@ -600,6 +606,11 @@ function initialiserAuth() {
         demarrerSyncPourUtilisateur();
       }
       afficherZoneCompte();
+
+      // Push : (ré)abonne le navigateur si rappels + permission + VAPID sont actifs
+      if (typeof abonnerPushSiPossible === 'function') {
+        abonnerPushSiPossible();
+      }
 
       // Au démarrage : une session restaurée ouvre directement l'application
       // (les connexions/inscriptions faites depuis le formulaire naviguent déjà

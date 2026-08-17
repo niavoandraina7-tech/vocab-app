@@ -3,7 +3,7 @@
 ## Vue d'ensemble
 
 « Mon Vocabulaire » : carnet de vocabulaire personnel fonctionnant **100 % hors ligne** en PWA (service worker + manifest).
-Application de révision espacée : les mots ont un niveau de maîtrise (`nouveau`, `en_cours`, `acquis`) et une prochaine révision programmée ; un **quiz chronométré** (« Jeu ») permet de réviser les mots arrivés à échéance.
+Application de révision espacée **SM-2** : chaque mot porte son état d'apprentissage (répétitions consécutives, facteur de facilité, intervalle) et une prochaine révision programmée ; un **quiz chronométré** (« Jeu ») permet de réviser les mots arrivés à échéance. Un écran **Statistiques** (Paramètres) montre la progression (mots maîtrisés, série de jours, révisions) et des **notifications push** (Web Push via Supabase) relancent l'utilisateur même app fermée.
 
 **Synchronisation** : depuis la V3, un compte Supabase (email + mot de passe) permet de synchroniser les données entre appareils. IndexedDB reste la source de vérité ; la sync est un bonus silencieux qui s'active en ligne. L'accès à l'app passe par un mur de connexion ; sans configuration Supabase (`config.js` en placeholder), l'app fonctionne en local sans compte.
 
@@ -38,13 +38,17 @@ js/rappels.js         — bandeau de rappel + notifications navigateur (localSto
 js/vocal.js           — dictée vocale (Web Speech API)
 js/quiz.js            — quiz chronométré + accueil de l'onglet Jeu
 js/export-import.js   — export/import JSON (fusion par ID)
+js/statistiques.js    — écran Statistiques (Paramètres) : progression, série de jours, répartition
+js/push.js            — abonnement Web Push (VAPID) + enregistrement dans Supabase
+js/vendor/supabase.min.js — SDK supabase-js vendu localement (hors-ligne)
 js/config.js          — configuration Supabase (URL + clé anon) — IGNORÉ par git
 js/auth.js            — authentification Supabase (client, session, écran connexion, section Compte)
 js/sync.js            — moteur de synchronisation (push/pull/fusion LWW, indicateurs UI)
-js/vendor/supabase.min.js — SDK supabase-js vendu localement (hors-ligne)
 js/app.js             — navigation (afficherEcran), initialisation, enregistrement SW
-service-worker.js     — cache offline (cache-first, exclut supabase.co)
-supabase/schema.sql   — script SQL à exécuter dans le projet Supabase (tables + RLS)
+service-worker.js     — cache offline (cache-first, exclut supabase.co) + gestionnaires push/notificationclick — NOM_CACHE généré automatiquement
+scripts/versionner-cache.js — génère le hash de NOM_CACHE (voir « Service worker »)
+supabase/schema.sql   — script SQL à exécuter dans le projet Supabase (tables + RLS + push_subscriptions)
+supabase/functions/envoyer-rappels/ — Edge Function Web Push (à déployer) + README + clé VAPID privée (gitignorée)
 supabase/GUIDE-CONFIGURATION.md — guide pas à pas (création projet, clés, RLS, tests)
 manifest.json         — PWA
 icons/                — icônes PWA
@@ -62,7 +66,7 @@ Une fonction d'un fichier appelée dans un autre ne doit être exécutée qu'au 
 
 - `afficherEcran(nomEcran)` (app.js) bascule la classe `.active` sur `#ecran-<nom>` et sur le bouton de menu `[data-ecran]`.
 - Onglets : `liste`, `categories`, `ajout`, `revision` (libellé « Jeu »), `parametres`.
-- **L'onglet Paramètres est un index de sections** : l'écran `parametres` n'affiche que la liste des sections (boutons `[data-section-parametres]` : compte, rappels, dictee, export). Un clic ouvre un sous-écran `parametres-compte` / `parametres-rappels` / `parametres-dictee` / `parametres-export` (sections `.ecran` à part, avec « ← Paramètres » = `[data-retour-parametres]`). Le menu garde « Paramètres » surligné pour ces sous-écrans (`SOUS_ECRANS_PARAMETRES` dans app.js). Les initialisations (`afficherZoneCompte`, `initialiserRappelsParametres`, `initialiserVocalParametres`) s'exécutent à l'ouverture du sous-écran correspondant.
+- **L'onglet Paramètres est un index de sections** : l'écran `parametres` n'affiche que la liste des sections (boutons `[data-section-parametres]` : compte, rappels, dictee, export, statistiques). Un clic ouvre un sous-écran `parametres-compte` / `parametres-rappels` / `parametres-dictee` / `parametres-export` / `parametres-statistiques` (sections `.ecran` à part, avec « ← Paramètres » = `[data-retour-parametres]`). Le menu garde « Paramètres » surligné pour ces sous-écrans (`SOUS_ECRANS_PARAMETRES` dans app.js). Les initialisations (`afficherZoneCompte`, `initialiserRappelsParametres`, `initialiserVocalParametres`, `afficherStatistiques`) s'exécutent à l'ouverture du sous-écran correspondant.
 - **Il n'y a plus de barre d'onglets en bas** : la navigation passe par un **bouton hamburger `☰`** (`#btn-menu`, fixe en haut à gauche) qui ouvre un **tiroir latéral** (`#barre-navigation.menu-tiroir`, glisse depuis la gauche avec un voile assombri `#voile-menu`). Fonctions dans app.js : `ouvrirMenu()` / `fermerMenu()` / `basculerMenu()`.
 - Le menu se ferme automatiquement après un clic sur une entrée, au clic sur le voile, à la touche Échap, ou via le bouton ✕ du tiroir.
 - `#app` a un padding haut (~62 px) pour laisser la place au bouton menu fixe.
@@ -79,7 +83,10 @@ Base `vocabDB`, version 2. Accès via les helpers de `db.js` (ne jamais manipule
 - `id` — UUID (`genererUUID()`)
 - `mot`, `definition`, `exemple`, `langue`
 - `categorieIds` — tableau d'ids (index `categorieIds`, multiEntry)
-- `niveauMaitrise` — `'nouveau'` | `'en_cours'` | `'acquis'`
+- `niveauMaitrise` — `'nouveau'` | `'en_cours'` | `'acquis'` (dérivé de l'état SM-2, voir revision.js)
+- `repetition` — nombre de succès consécutifs (SM-2)
+- `easeFacteur` — facteur de facilité (2.5 initial, plancher 1.3)
+- `intervalleJours` — intervalle calculé (`null` = jamais calculé, mot « hérité » de l'ancien système)
 - `prochaineRevision` — **« AAAA-MM-JJ »** (choix utilisateur, minuit local) **ou ISO** (évaluation automatique) ; `null` = automatique
 - `dateCreation`, `dateModification` — ISO
 - `historiqueRevision` — `[{ date: ISO, resultat: 'facile'|'difficile'|'echec' }]`
@@ -102,13 +109,26 @@ Helpers de dates partagés (db.js) : `parserDateRevision` (accepte les deux form
 - `sync_dernier_pull_<userId>` — date ISO de la dernière récupération distante (pull)
 - `sync_migre_<userId>` — `'1'` quand les données locales ont été migrées vers le compte
 
-## Logique de révision (revision.js)
+## Logique de révision — SM-2 (revision.js)
 
-- `SEUILS_REVISION = { nouveau: 3, en_cours: 7, acquis: 14 }` (jours).
+- **Algorithme SM-2** : `appliquerSM2(mot, resultat)` met à jour `repetition` (succès consécutifs, remis à 0 à l'échec), `easeFacteur` (2.5 initial, plancher 1.3 ; formule EF′ = EF + 0.1 − (5−q)×(0.08 + (5−q)×0.02) avec q=5 facile, 3 difficile, 1 échec) et `intervalleJours` (I(1)=1 j, I(2)=6 j, I(n)=arrondi(I(n−1)×EF)). Qualité ≥ 3 = succès (répétition +1).
+- **Amorçage des mots « hérités »** (`amorcerEtatSM2`) : un mot sans `intervalleJours` (jamais évalué en SM-2) démarre depuis son ancien niveau (`nouveau`→0 répétition, `en_cours`→1, `acquis`→3) avec EF 2.5 et l'ancien seuil — transition sans à-coup.
+- **Niveau de maîtrise dérivé** : 0 répétition → `nouveau`, 1-2 → `en_cours`, ≥ 3 → `acquis` (alimente les badges et filtres existants sans autre changement).
+- `SEUILS_REVISION = { nouveau: 3, en_cours: 7, acquis: 14 }` : conservé uniquement comme **repli** pour les mots jamais programmés (et pour l'amorçage).
 - `estAReviser(mot)` : une `prochaineRevision` programmée fait foi (atteinte/dépassée) ; sinon jamais révisé → vrai, ou dernière révision + seuil du niveau.
-- `calculerNouveauNiveau` : `echec` → `nouveau`, `difficile` → `en_cours`, `facile` → monte d'un cran (`nouveau`→`en_cours`, `en_cours`→`acquis`, `acquis` reste).
-- `enregistrerEvaluation(mot, resultat)` : met à jour niveau, `prochaineRevision` (= maintenant + seuil du nouveau niveau, ISO) et l'historique. **C'est la même fonction** pour la session individuelle (Révision classique) et le quiz — les données sont partagées.
+- `enregistrerEvaluation(mot, resultat)` : applique SM-2, ajoute à l'historique, met à jour `dateModification` et `prochaineRevision` (= maintenant + intervalle, ISO), persiste. **C'est la même fonction** pour la session individuelle (Révision classique) et le quiz — les données sont partagées.
 - `selectionnerMotsAReviser(mots, idCategorie, categories)` : filtre catégorie (+ sous-catégories, via `obtenirIdsCategorieEtSousCategories`) puis mots à réviser.
+
+## Statistiques (statistiques.js)
+
+- Écran **Paramètres → Statistiques** (`parametres-statistiques`, index + sous-écran, `#zone-statistiques`). `afficherStatistiques()` calcule depuis les données locales (aucune écriture) : total de mots, mots maîtrisés (acquis + %), **série de jours** (`calculerSerieJours` — jours consécutifs avec ≥ 1 révision, en partant d'aujourd'hui ou d'hier si rien aujourd'hui), révisions totales / aujourd'hui, mots programmés, et répartition par niveau avec barres.
+
+## Notifications push (Web Push)
+
+- **Client** (`js/push.js`) : `abonnerPushSiPossible()` abonne le navigateur (`PushManager.subscribe`, clé VAPID publique de `js/config.js.vapidPublicKey`) et enregistre l'abonnement dans la table Supabase `push_subscriptions` (upsert sur `endpoint`). Conditions : Supabase configuré + VAPID + SW + PushManager + **permission `granted`** + **rappels activés** + utilisateur connecté. `desabonnerPush(userId)` désabonne et nettoie la table (appelé à la déconnexion et quand on désactive les rappels). Toujours non bloquant (console.warn en cas d'échec).
+- **Service worker** : gestionnaires `push` (payload JSON `{title, body}` → `showNotification`) et `notificationclick` (focus fenêtre ouverte + `postMessage({type:'ouvrir-revision'})` → l'onglet Jeu s'ouvre, écouteur dans app.js ; sinon `clients.openWindow`).
+- **Envoi** : Edge Function `supabase/functions/envoyer-rappels` (Deno, `npm:web-push`) — mots en retard (prochaine révision dépassée ≥ 2 jours), groupés par utilisateur, push via clés VAPID (env vars `VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY`). **À déployer + planifier** (pg_cron ou cron externe) — voir `supabase/functions/envoyer-rappels/README.md`. La clé privée vit dans `supabase/functions/envoyer-rappels/vapid-prive.txt` (**gitignoré**, jamais commité).
+- ⚠️ Table `push_subscriptions` + politiques RLS : bloc « V3.2 » de `supabase/schema.sql` (idempotent).
 
 ## Quiz / onglet « Jeu » (quiz.js)
 
@@ -134,7 +154,7 @@ Helpers de dates partagés (db.js) : `parserDateRevision` (accepte les deux form
 - L'app est **100 % statique** (pas de build) : importer le dépôt sur Vercel avec **Root Directory = `vocab-app`**, framework « Other ».
 - ⚠️ **`js/config.js` est gitignoré → il n'est PAS déployé par défaut** : en ligne, `/js/config.js` renvoie 404 et l'app affiche « Supabase n'est pas configuré » (pas d'auth/sync). Pour activer Supabase en ligne : retirer `js/config.js` du `.gitignore` et le committer — c'est sûr car la clé **anon** est publique par conception (seule la clé `service_role` doit rester secrète, jamais côté client).
 - **Dans Supabase** (Authentication → URL Configuration) : Site URL = l'URL Vercel (`https://…vercel.app`) et Redirect URLs = `<URL>/**` — indispensable pour les liens de confirmation d'email et de réinitialisation.
-- **Avant chaque push** : incrémenter `NOM_CACHE` dans `service-worker.js` (actuellement **v26**) pour que les utilisateurs reçoivent la nouvelle version (Vercel redéploie automatiquement au push si l'auto-deploy est actif).
+- **Avant chaque push** : lancer `node scripts/versionner-cache.js` (ou `--check` pour vérifier sans écrire) pour régénérer `NOM_CACHE` — les utilisateurs reçoivent alors la nouvelle version (Vercel redéploie automatiquement au push si l'auto-deploy est actif).
 - Guide complet : `supabase/GUIDE-CONFIGURATION.md`.
 
 ## Synchronisation Supabase (V3)
@@ -156,7 +176,10 @@ Helpers de dates partagés (db.js) : `parserDateRevision` (accepte les deux form
 
 - Stratégie cache-first ; navigation servie depuis `index.html` en cache.
 - **Les requêtes vers `*.supabase.co` ne sont JAMAIS interceptées** (ni cache, ni service depuis le cache) — sinon la PWA servirait des données/sessions périmées.
-- **Quand on modifie un fichier de l'app, incrémenter `NOM_CACHE`** (actuellement `vocab-cache-v26`) pour forcer le re-téléchargement chez les utilisateurs. Sans ça, la PWA continue de servir l'ancienne version.
+- **Le nom du cache est généré automatiquement** par `scripts/versionner-cache.js` : hash SHA-256 (préfixe 12 hex) du contenu des fichiers de `FICHIERS_A_CACHER`, injecté dans `NOM_CACHE` entre les marqueurs `// >>> CACHE_VERSION_AUTOMATIQUE` / `// >>> FIN_CACHE_VERSION_AUTOMATIQUE`. Toute modification d'un fichier de l'app change le hash → nouveau nom de cache → re-téléchargement chez les utilisateurs (l'ancien cache est supprimé à l'activation).
+- **Workflow** : après chaque modification des fichiers de l'app (y compris `index.html`), lancer `node scripts/versionner-cache.js` avant commit/push. Le mode `--check` est utile avant push/CI : exit 1 si le hash est périmé. Ne pas modifier à la main les zones entre marqueurs `>>> …` (le script les réécrit).
+- **Ne pas ajouter de fichier au cache sans le mettre dans `FICHIERS_A_CACHER`** (entre `// >>> LISTE_FICHIERS_A_CACHER` / `// >>> FIN_LISTE_FICHIERS_A_CACHER`) : le script hache exactement cette liste.
+- **Pourquoi pas un hash calculé dans le service worker lui-même ?** Le navigateur ne réinstalle le SW que si son fichier change (comparaison d'octets à chaque navigation). Un hash calculé uniquement au runtime ne serait jamais recalculé si `service-worker.js` reste identique. Le script garantit que le SW change de contenu dès qu'un fichier change → mise à jour fiable sans build.
 
 ## Conventions de code
 
@@ -172,6 +195,8 @@ Helpers de dates partagés (db.js) : `parserDateRevision` (accepte les deux form
 - Tests manuels dans un navigateur via un serveur statique (voir « Lancer l'application »).
 - Après un changement, tester au minimum : chargement sans erreur console, ajout/édition/suppression d'un mot, navigation entre onglets, quiz complet, ajout de catégorie.
 - Pour l'auth : vérifier que la barre de navigation disparaît sur l'écran `connexion` et réapparaît au retour, la bascule Connexion/Inscription, les messages d'erreur, et le flux complet (connexion → migration → « ☁️ À jour » → déconnexion).
+- Révision SM-2 : vérifier la progression des intervalles (1 j → 6 j → ×EF), la remise à zéro à l'échec et l'amorçage des anciens mots — testable en console avec `appliquerSM2(mot, resultat)`.
+- Statistiques : ouvrir Paramètres → Statistiques et contrôler cartes + répartition (les données viennent de l'historique réel).
 - Données de test : supprimer la base avec les devtools (Application → IndexedDB → `vocabDB`) pour repartir de zéro (les catégories par défaut sont recréées à l'ouverture).
 
 ## Pièges connus
@@ -188,4 +213,6 @@ Helpers de dates partagés (db.js) : `parserDateRevision` (accepte les deux form
 - **L'aperçu local peut rester sur l'ancienne version** : le service worker sert la page en cache (cache-first). Après une modification, purger les caches et désenregistrer le SW depuis la console (`caches.keys()`, `navigator.serviceWorker.getRegistrations()`) puis recharger — ou simplement incrémenter `NOM_CACHE`.
 - **Tester le flux d'auth sans compte réel** : `clientSupabase` et `utilisateurCourant` sont des bindings globaux réassignables depuis la console — on peut injecter un faux client (méthodes `auth.getSession/onAuthStateChange/signInWithPassword/signUp/signOut` + `from().upsert()/select()`) et rejouer `initialiserAuth()` pour passer tout le flux (migration, push/pull, UI) sans réseau. Ne pas oublier de nettoyer (`localStorage`, `sync_migre_*`, base) ensuite.
 - **Le projet Supabase de production exige la confirmation d'email** (`mailer_autoconfirm: false`) : une inscription crée un compte non confirmé sans session — tester la connexion nécessite de cliquer le lien de l'email (Site URL doit pointer vers l'app).
+- **SM-2 et colonnes serveur** : le client pousse `repetition`/`ease_facteur`/`intervalle_jours`. Si le bloc « V3.2 » de `schema.sql` n'a pas été exécuté sur le projet, l'upsert échoue (colonne inexistante) → état `erreur` de sync. Exécuter le SQL **en même temps** que le déploiement du nouveau client.
+- **Push non testable en automatisation** : la souscription réelle exige une permission navigateur (prompt OS) qu'on ne peut pas cliquer programmatiquement. En environnement sans push service, `PushManager.subscribe` échoue → `abonnerPushSiPossible` retourne false proprement. Le test complet se fait à la main (permission + SQL + fonction déployée).
 - **Realtime ne remonte jamais les changements si la table n'est pas dans la publication `supabase_realtime`** — vérifier le `schema.sql` (bloc ALTER PUBLICATION) avant de chercher un bug dans sync.js. Le canal se connecte quand même (`SUBSCRIBED`), c'est ce qui rend le diagnostic piégeux.

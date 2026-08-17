@@ -8,5 +8,9 @@
 
 window.SUPABASE_CONFIG = {
   url: 'https://wbrbyujcmiognrwwvbnf.supabase.co',
-  anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndicmJ5dWpjbWlvZ25yd3d2Ym5mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY4MzA2OTgsImV4cCI6MjEwMjQwNjY5OH0.rn29ANka16wpqc09wEkD7MoIqfmTNQp8hcueuWQ3tdg'
+  anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndicmJ5dWpjbWlvZ25yd3d2Ym5mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY4MzA2OTgsImV4cCI6MjEwMjQwNjY5OH0.rn29ANka16wpqc09wEkD7MoIqfmTNQp8hcueuWQ3tdg',
+  // Clé publique VAPID (Web Push) — publique par conception.
+  // La clé PRIVÉE correspondante est stockée dans les variables d'environnement
+  // de la Edge Function « envoyer-rappels » (voir supabase/functions/README.md).
+  vapidPublicKey: 'BKLa9oCBJdIxq72VHo-khnRfA-ZMVQM9VkTC-pImJM71XbmEyc4uQjcJFUDyDUzC8gpxgxyINb2ygz-UaIum580'
 };

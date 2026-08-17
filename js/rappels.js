@@ -130,6 +130,10 @@ function initialiserRappelsParametres() {
   if (rappelsActives()) {
     if (Notification.permission === 'granted') {
       info.textContent = 'Notifications activées : une notification s\'affiche à l\'ouverture de l\'app quand des mots sont en retard.';
+      // Push (app fermée) : abonne le navigateur et enregistre dans Supabase
+      if (typeof abonnerPushSiPossible === 'function') {
+        abonnerPushSiPossible();
+      }
     } else if (Notification.permission === 'denied') {
       info.textContent = 'Permission refusée dans votre navigateur : les rappels visuels dans l\'app restent actifs, mais aucune notification navigateur ne sera envoyée.';
     }
@@ -149,6 +153,10 @@ document.getElementById('reglage-rappels-actives').addEventListener('change', (e
   if (!caseRappels.checked) {
     localStorage.removeItem(CLE_RAPPELS_ACTIVES);
     info.textContent = '';
+    // Désactive aussi le push (abonnement navigateur + enregistrement Supabase)
+    if (typeof desabonnerPush === 'function' && typeof obtenirUtilisateurCourantId === 'function') {
+      desabonnerPush(obtenirUtilisateurCourantId());
+    }
     return;
   }
 
@@ -161,6 +169,10 @@ document.getElementById('reglage-rappels-actives').addEventListener('change', (e
     if (permission === 'granted') {
       info.textContent = 'Notifications activées : une notification s\'affiche à l\'ouverture de l\'app quand des mots sont en retard.';
       verifierRappelNotification();
+      // Push (app fermée) : abonne le navigateur et enregistre dans Supabase
+      if (typeof abonnerPushSiPossible === 'function') {
+        abonnerPushSiPossible();
+      }
     } else {
       info.textContent = 'Permission non accordée : les rappels visuels dans l\'app restent actifs, mais aucune notification navigateur ne sera envoyée.';
     }

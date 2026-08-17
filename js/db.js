@@ -149,7 +149,12 @@ function normaliserEnregistrement(enregistrement) {
     userId,
     syncStatus: enregistrement.syncStatus || 'en_attente',
     supprime: enregistrement.supprime === true,
-    dateModification: enregistrement.dateModification || maintenant
+    dateModification: enregistrement.dateModification || maintenant,
+    // Révision espacée (SM-2) : état d'apprentissage par mot
+    // (conservé tel quel s'il est déjà présent, valeurs par défaut sinon)
+    repetition: enregistrement.repetition ?? 0,
+    easeFacteur: enregistrement.easeFacteur ?? 2.5,
+    intervalleJours: enregistrement.intervalleJours ?? null
   };
 }
 

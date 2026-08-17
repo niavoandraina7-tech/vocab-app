@@ -28,7 +28,7 @@ function afficherEcran(nomEcran) {
   // Met à jour le bouton actif du menu de navigation
   // (la fiche détail fait partie de l'onglet Liste ; les sous-écrans de
   // Paramètres font partie de l'onglet Paramètres)
-  const SOUS_ECRANS_PARAMETRES = ['parametres-compte', 'parametres-rappels', 'parametres-dictee', 'parametres-export'];
+  const SOUS_ECRANS_PARAMETRES = ['parametres-compte', 'parametres-rappels', 'parametres-dictee', 'parametres-export', 'parametres-statistiques'];
   const nomEcranNav = nomEcran === 'detail' ? 'liste'
     : SOUS_ECRANS_PARAMETRES.includes(nomEcran) ? 'parametres' : nomEcran;
   document.querySelectorAll('.nav-bouton').forEach((bouton) => {
@@ -65,6 +65,9 @@ function afficherEcran(nomEcran) {
   }
   if (nomEcran === 'parametres-dictee') {
     initialiserVocalParametres();
+  }
+  if (nomEcran === 'parametres-statistiques' && typeof afficherStatistiques === 'function') {
+    afficherStatistiques();
   }
 }
 
@@ -173,6 +176,13 @@ if ('serviceWorker' in navigator) {
       .catch((erreur) => {
         console.error('Erreur lors de l\'enregistrement du Service Worker', erreur);
       });
+  });
+
+  // Clic sur une notification push → ouvre l'onglet Jeu (révision)
+  navigator.serviceWorker.addEventListener('message', (evenement) => {
+    if (evenement.data && evenement.data.type === 'ouvrir-revision') {
+      afficherEcran('revision');
+    }
   });
 }
 

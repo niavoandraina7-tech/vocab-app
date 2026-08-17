@@ -1,7 +1,103 @@
 // revision.js — système de révision (liste à réviser, auto-évaluation par mot)
 
-// Seuils de révision en jours selon le niveau de maîtrise
+// Seuils de révision « hérités » en jours — utilisés uniquement pour amorcer les
+// mots créés avant la révision espacée SM-2 (et comme repli si un mot n'a pas
+// encore de prochaine révision programmée). Depuis, les intervalles sont calculés
+// par l'algorithme SM-2 (voir appliquerSM2 ci-dessous).
 const SEUILS_REVISION = { nouveau: 3, en_cours: 7, acquis: 14 };
+
+// ---- Révision espacée (SM-2) ----
+// Chaque mot porte son état d'apprentissage :
+//   repetition      : nombre de succès consécutifs (remis à 0 après un échec)
+//   easeFacteur     : facteur de facilité (2.5 initial, plancher 1.3)
+//   intervalleJours : intervalle calculé (null = jamais calculé, mot « hérité »)
+// Intervalles : I(1) = 1 jour, I(2) = 6 jours, I(n) = arrondi(I(n-1) × EF).
+const EASE_FACTEUR_INITIAL = 2.5;
+const EASE_FACTEUR_MIN = 1.3;
+const INTERVALLE_APRES_ECHEC_JOURS = 1;
+
+/**
+ * Qualité (0-5) correspondant à une auto-évaluation utilisateur.
+ * @param {string} resultat - 'facile', 'difficile' ou 'echec'
+ * @returns {number}
+ */
+function qualiteSM2(resultat) {
+  if (resultat === 'facile') return 5;
+  if (resultat === 'difficile') return 3;
+  return 1; // echec
+}
+
+/**
+ * Met à jour le facteur de facilité (formule SM-2).
+ * @param {number} easeFacteur
+ * @param {number} qualite - 0 à 5
+ * @returns {number}
+ */
+function majEaseFacteur(easeFacteur, qualite) {
+  const ecart = 5 - qualite;
+  const delta = 0.1 - ecart * (0.08 + ecart * 0.02);
+  return Math.max(EASE_FACTEUR_MIN, easeFacteur + delta);
+}
+
+/**
+ * Intervalle en jours selon la répétition (SM-2) : 1, 6, puis ×EF.
+ * @param {number} repetition - Nombre de succès consécutifs APRÈS cette évaluation
+ * @param {number|null} intervallePrecedent
+ * @param {number} easeFacteur
+ * @returns {number}
+ */
+function calculerIntervalleSM2(repetition, intervallePrecedent, easeFacteur) {
+  if (repetition === 1) return 1;
+  if (repetition === 2) return 6;
+  return Math.max(1, Math.round((intervallePrecedent || 6) * easeFacteur));
+}
+
+/**
+ * État SM-2 initial d'un mot « hérité » (créé avant SM-2), déduit de son
+ * niveau de maîtrise existant pour une transition sans à-coup.
+ * @param {Object} mot
+ * @returns {{repetition: number, easeFacteur: number, intervalleJours: number}}
+ */
+function amorcerEtatSM2(mot) {
+  const seedRepetition = { nouveau: 0, en_cours: 1, acquis: 3 };
+  return {
+    repetition: seedRepetition[mot.niveauMaitrise] || 0,
+    easeFacteur: EASE_FACTEUR_INITIAL,
+    intervalleJours: SEUILS_REVISION[mot.niveauMaitrise] || SEUILS_REVISION.nouveau
+  };
+}
+
+/**
+ * Applique SM-2 à un mot pour une auto-évaluation.
+ * @param {Object} mot
+ * @param {string} resultat - 'facile', 'difficile' ou 'echec'
+ * @returns {{repetition: number, easeFacteur: number, intervalleJours: number, niveauMaitrise: string}}
+ */
+function appliquerSM2(mot, resultat) {
+  const herite = mot.intervalleJours === undefined || mot.intervalleJours === null;
+  const etat = herite
+    ? amorcerEtatSM2(mot)
+    : {
+        repetition: mot.repetition || 0,
+        easeFacteur: mot.easeFacteur || EASE_FACTEUR_INITIAL,
+        intervalleJours: mot.intervalleJours
+      };
+
+  let { repetition, easeFacteur, intervalleJours } = etat;
+
+  if (resultat === 'echec') {
+    repetition = 0;
+    intervalleJours = INTERVALLE_APRES_ECHEC_JOURS;
+  } else {
+    repetition += 1;
+    intervalleJours = calculerIntervalleSM2(repetition, intervalleJours, easeFacteur);
+  }
+  easeFacteur = majEaseFacteur(easeFacteur, qualiteSM2(resultat));
+
+  // Niveau de maîtrise dérivé de l'état SM-2 (alimente les badges et filtres existants)
+  const niveauMaitrise = repetition === 0 ? 'nouveau' : (repetition <= 2 ? 'en_cours' : 'acquis');
+  return { repetition, easeFacteur, intervalleJours, niveauMaitrise };
+}
 
 // Mot actuellement en cours de révision (null = aucun)
 let motEnRevision = null;
@@ -58,42 +154,23 @@ function selectionnerMotsAReviser(mots, idCategorie, categories) {
 }
 
 /**
- * Calcule le nouveau niveau de maîtrise selon la règle d'auto-évaluation.
- * @param {string} niveauActuel
- * @param {string} resultat - 'facile', 'difficile' ou 'echec'
- * @returns {string}
- */
-function calculerNouveauNiveau(niveauActuel, resultat) {
-  if (resultat === 'echec') {
-    return 'nouveau';
-  }
-  if (resultat === 'difficile') {
-    return 'en_cours';
-  }
-  if (resultat === 'facile') {
-    if (niveauActuel === 'nouveau') return 'en_cours';
-    if (niveauActuel === 'en_cours') return 'acquis';
-    return niveauActuel; // « acquis » reste « acquis »
-  }
-  return niveauActuel;
-}
-
-/**
- * Enregistre une évaluation : ajoute à l'historique, met à jour dateModification,
- * le niveau de maîtrise et la prochaine révision (seuil du nouveau niveau),
- * puis persiste en IndexedDB.
+ * Enregistre une évaluation : applique SM-2 (répétition, facteur de facilité,
+ * intervalle), ajoute à l'historique, met à jour dateModification, le niveau de
+ * maîtrise dérivé et la prochaine révision, puis persiste en IndexedDB.
  * @param {Object} mot
  * @param {string} resultat
  * @returns {Promise<Object>} Le mot mis à jour
  */
 function enregistrerEvaluation(mot, resultat) {
   const maintenant = new Date();
-  const niveau = calculerNouveauNiveau(mot.niveauMaitrise, resultat);
-  const seuil = SEUILS_REVISION[niveau] || SEUILS_REVISION.nouveau;
-  const prochaine = new Date(maintenant.getTime() + seuil * 24 * 60 * 60 * 1000);
+  const sm2 = appliquerSM2(mot, resultat);
+  const prochaine = new Date(maintenant.getTime() + sm2.intervalleJours * 24 * 60 * 60 * 1000);
   const motMaj = {
     ...mot,
-    niveauMaitrise: niveau,
+    niveauMaitrise: sm2.niveauMaitrise,
+    repetition: sm2.repetition,
+    easeFacteur: sm2.easeFacteur,
+    intervalleJours: sm2.intervalleJours,
     dateModification: maintenant.toISOString(),
     prochaineRevision: prochaine.toISOString(),
     historiqueRevision: [...(mot.historiqueRevision || []), { date: maintenant.toISOString(), resultat }]

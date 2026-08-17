@@ -31,6 +31,9 @@ create table if not exists public.mots (
   langue            text not null default '',
   categorie_ids     uuid[] not null default '{}',
   niveau_maitrise   text not null default 'nouveau',
+  repetition        integer not null default 0,
+  ease_facteur      double precision not null default 2.5,
+  intervalle_jours  integer,
   prochaine_revision text,
   historique_revision jsonb not null default '[]'::jsonb,
   date_creation     timestamptz not null default now(),
@@ -77,6 +80,55 @@ begin
   end if;
   if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'categories') then
     alter publication supabase_realtime add table public.categories;
+  end if;
+end $$;
+
+-- ---- V3.2 : révision espacée (SM-2) — colonnes sur « mots » ----
+-- Pour un projet existant (les tables ont déjà été créées par l'ancien schéma),
+-- ajoute les colonnes SM-2. Idempotent, peut être ré-exécuté.
+do $$
+begin
+  if not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'mots' and column_name = 'repetition') then
+    alter table public.mots add column repetition integer not null default 0;
+  end if;
+  if not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'mots' and column_name = 'ease_facteur') then
+    alter table public.mots add column ease_facteur double precision not null default 2.5;
+  end if;
+  if not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'mots' and column_name = 'intervalle_jours') then
+    alter table public.mots add column intervalle_jours integer;
+  end if;
+end $$;
+
+-- ---- V3.2 : notifications push (Web Push) ----
+-- Table des abonnements push par utilisateur. Idempotent.
+create table if not exists public.push_subscriptions (
+  id             uuid primary key default gen_random_uuid(),
+  user_id        uuid not null references auth.users (id) on delete cascade,
+  endpoint       text not null unique,
+  cle_p256dh     text not null,
+  cle_auth       text not null,
+  date_creation  timestamptz not null default now()
+);
+
+alter table public.push_subscriptions enable row level security;
+
+create index if not exists idx_push_subscriptions_user_id on public.push_subscriptions (user_id);
+
+-- Politiques RLS : chaque utilisateur gère SES abonnements (la Edge Function
+-- « envoyer-rappels » utilise la clé service_role, non soumise à la RLS).
+do $$
+begin
+  if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'push_subscriptions' and policyname = 'push_select_own') then
+    create policy "push_select_own" on public.push_subscriptions
+      for select using (user_id = auth.uid());
+  end if;
+  if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'push_subscriptions' and policyname = 'push_insert_own') then
+    create policy "push_insert_own" on public.push_subscriptions
+      for insert with check (user_id = auth.uid());
+  end if;
+  if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'push_subscriptions' and policyname = 'push_delete_own') then
+    create policy "push_delete_own" on public.push_subscriptions
+      for delete using (user_id = auth.uid());
   end if;
 end $$;
 

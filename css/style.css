@@ -1313,6 +1313,83 @@ button:disabled {
   flex-shrink: 0;
 }
 
+/* ---- Paramètres : Statistiques ---- */
+.grille-statistiques {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.carte-statistique {
+  background-color: #ffffff;
+  border: 1px solid var(--couleur-bordure);
+  border-radius: 12px;
+  padding: 14px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.carte-statistique-valeur {
+  font-size: 1.35rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.carte-statistique-titre {
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.carte-statistique-sous-titre {
+  font-size: 0.78rem;
+  color: var(--couleur-texte-secondaire);
+  margin-top: 2px;
+}
+
+.repartition-statistiques h3 {
+  margin: 0 0 10px;
+  font-size: 1rem;
+}
+
+.ligne-repartition {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.barre-repartition {
+  flex: 1;
+  height: 10px;
+  background-color: #f1f3f4;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.remplissage-repartition {
+  height: 100%;
+  border-radius: 999px;
+}
+
+.remplissage-nouveau {
+  background-color: #9aa0a6;
+}
+
+.remplissage-en_cours {
+  background-color: #f9ab00;
+}
+
+.remplissage-acquis {
+  background-color: #188038;
+}
+
+.compte-repartition {
+  min-width: 24px;
+  text-align: right;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
 /* ---- Desktop : le tiroir et le hamburger fonctionnent pareil, contenu élargi ---- */
 @media (min-width: 768px) {
   #app {

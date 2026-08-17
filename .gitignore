@@ -5,3 +5,5 @@
 *.log
 .DS_Store
 Thumbs.db
+# Clé privée VAPID (Web Push) — ne jamais commiter
+supabase/functions/envoyer-rappels/vapid-prive.txt
