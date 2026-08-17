@@ -5,7 +5,7 @@
 « Mon Vocabulaire » : carnet de vocabulaire personnel fonctionnant **100 % hors ligne** en PWA (service worker + manifest).
 Application de révision espacée : les mots ont un niveau de maîtrise (`nouveau`, `en_cours`, `acquis`) et une prochaine révision programmée ; un **quiz chronométré** (« Jeu ») permet de réviser les mots arrivés à échéance.
 
-**Synchronisation optionnelle** : depuis la V3, un compte Supabase (email + mot de passe) permet de synchroniser les données entre appareils. IndexedDB reste la source de vérité ; la sync est un bonus silencieux qui s'active en ligne. L'app reste utilisable sans compte (mode invité) et sans configuration.
+**Synchronisation** : depuis la V3, un compte Supabase (email + mot de passe) permet de synchroniser les données entre appareils. IndexedDB reste la source de vérité ; la sync est un bonus silencieux qui s'active en ligne. L'accès à l'app passe par un mur de connexion ; sans configuration Supabase (`config.js` en placeholder), l'app fonctionne en local sans compte.
 
 **Stack** : HTML / CSS / JavaScript vanille, **aucun framework, aucun build, pas de `package.json`**. Seule dépendance : le SDK `@supabase/supabase-js` vendu en local (`js/vendor/supabase.min.js`).
 Tout l'interface, le code et les commentaires sont en **français** (noms de variables : `mot`, `categorie`, `revision`, `quiz`…).
@@ -120,19 +120,21 @@ Helpers de dates partagés (db.js) : `parserDateRevision` (accepte les deux form
 ## Authentification (auth.js)
 
 - Écran `connexion` : **mur de connexion** (Supabase configuré) — seule l'authentification donne accès à l'app. Il est aussi accessible depuis **Paramètres → Compte → « Se connecter / Créer un compte »** pour un changement de compte (après déconnexion, la page de connexion s'affiche d'office).
-- **Design** : carte centrée (`connexion-carte`, max 440 px) avec en-tête logo 📖 + titre, champs pleine largeur, bouton principal pleine largeur, lien « Mot de passe oublié ? » et bouton discret « Continuer sans compte ».
+- **Design** : carte centrée (`connexion-carte`, max 440 px) avec en-tête logo 📖 + titre, champs pleine largeur, bouton principal pleine largeur et lien « Mot de passe oublié ? ». Aucun bouton d'échappement (ni retour, ni mode invité).
 - **Onglets « Connexion / Inscription »** (`btn-onglet-connexion`, `btn-onglet-inscription`, `role=tablist`) : `definirModeConnexion('connexion'|'inscription')` bascule le libellé du bouton submit (« Se connecter » / « Créer mon compte »), l'`autocomplete` du mot de passe (`current-password`/`new-password`) et la visibilité du lien « Mot de passe oublié ?`. La soumission du formulaire route vers `seConnecter()` ou `sinscrire()` selon le mode actif (`modeConnexion`).
 - **Session** : `onAuthStateChange` (SIGNED_IN / INITIAL_SESSION / SIGNED_OUT) ; `initialiserAuth()` peut être appelé plusieurs fois sans doublon d'écouteurs (garde `ecranConnexionBranche`). `obtenirClientSupabase()` expose le client à sync.js.
 - **Session expirée vs déconnexion volontaire** : SIGNED_OUT survient dans les deux cas. `deconnexionExplicite` (posé par `seDeconnecter`) permet de distinguer : une expiration affiche « Votre session a expiré… » sur la page de connexion, une déconnexion volontaire renvoie au mur sans message.
 - **Inscription** : si la confirmation d'email est requise dans le projet (`mailer_autoconfirm: false`), le compte est créé mais pas de session → message « Un email de confirmation vous a été envoyé », l'utilisateur reste sur l'écran. Les erreurs sont traduites en français (`erreurTraduite`).
+- **Section Compte (Paramètres)** : badge « ✅ Email confirmé » / « ⚠️ Email non confirmé » (champ `emailConfirme` posé sur `utilisateurCourant` depuis `session.user.email_confirmed_at`), bouton **« Changer le mot de passe »** (formulaire inline `#form-changer-motdepasse` → `auth.updateUser({ password })`, validation locale 6 caractères + confirmation identique) et bouton **« Renvoyer l'email de confirmation »** (visible seulement si email non confirmé → `auth.resend({ type: 'signup' })`). Retours dans `#message-compte`.
 - **Erreurs réseau** : se connecter nécessite internet (l'app hors-ligne, elle, n'en a pas besoin) — message clair dans ce cas.
+- **`erreurTraduite()`** couvre : identifiants invalides, email déjà utilisé, mot de passe trop court, email non confirmé, email invalide, réseau, **rate limit** (429 → « Trop de tentatives… »), changement de mot de passe (même mot de passe), email déjà confirmé, et un repli générique pour les messages contenant « password ».
 
 ## Déploiement Vercel
 
 - L'app est **100 % statique** (pas de build) : importer le dépôt sur Vercel avec **Root Directory = `vocab-app`**, framework « Other ».
 - ⚠️ **`js/config.js` est gitignoré → il n'est PAS déployé par défaut** : en ligne, `/js/config.js` renvoie 404 et l'app affiche « Supabase n'est pas configuré » (pas d'auth/sync). Pour activer Supabase en ligne : retirer `js/config.js` du `.gitignore` et le committer — c'est sûr car la clé **anon** est publique par conception (seule la clé `service_role` doit rester secrète, jamais côté client).
 - **Dans Supabase** (Authentication → URL Configuration) : Site URL = l'URL Vercel (`https://…vercel.app`) et Redirect URLs = `<URL>/**` — indispensable pour les liens de confirmation d'email et de réinitialisation.
-- **Avant chaque push** : incrémenter `NOM_CACHE` dans `service-worker.js` (actuellement **v21**) pour que les utilisateurs reçoivent la nouvelle version (Vercel redéploie automatiquement au push si l'auto-deploy est actif).
+- **Avant chaque push** : incrémenter `NOM_CACHE` dans `service-worker.js` (actuellement **v26**) pour que les utilisateurs reçoivent la nouvelle version (Vercel redéploie automatiquement au push si l'auto-deploy est actif).
 - Guide complet : `supabase/GUIDE-CONFIGURATION.md`.
 
 ## Synchronisation Supabase (V3)
@@ -143,7 +145,10 @@ Helpers de dates partagés (db.js) : `parserDateRevision` (accepte les deux form
 - **Boucle push/pull** (sync.js) : push des `en_attente` (catégories avant mots, upsert `onConflict: 'id'`), puis pull des lignes modifiées depuis `sync_dernier_pull_<userId>` (paginé par 1000). Fusion LWW : la `dateModification` la plus récente gagne. **Crucial** : les écritures issues de la sync passent par `provenance: 'sync'` pour ne PAS remettre `en_attente` (sinon boucle push/pull infinie).
 - **Suppression** : soft delete dès que l'enregistrement a un `userId` (physique sinon). Les tombstones sont filtrés de `obtenirTousLesMots`/`obtenirToutesLesCategories` par défaut (`inclureSupprimes: true` pour la sync).
 - **Migration au premier login** (`associerDonneesAUtilisateur`) : pull initial → association des données `userId: null` → push → pull final. Les catégories par défaut du même nom déjà présentes sur le compte sont fusionnées (mots réassignés), les autres catégories sont conservées telles quelles.
-- **Déclencheurs** : connexion, retour en ligne, réouverture, périodique 60 s, différé 3 s après modification. `navigator.onLine === false` → état `hors_ligne`, rien n'est tenté.
+- **Déclencheurs** : connexion, retour en ligne, réouverture, périodique 60 s (secours), différé 3 s après modification, et **Supabase Realtime** (voir ci-dessous). `navigator.onLine === false` → état `hors_ligne`, rien n'est tenté.
+- **Temps réel (Supabase Realtime)** : `demarrerRealtime(userId)` (sync.js) abonne un canal `sync-<userId>` aux événements `postgres_changes` (`*`) sur les tables `mots` et `categories` filtrés par `user_id=eq.<userId>`. Chaque événement déclenche une `synchroniser()` **anti-rafale** (debounce 800 ms) — on ne lit pas le payload, on re-pull tout. `arreterRealtime()` ferme le canal (déconnexion, changement d'utilisateur) ; relance sur retour en ligne et, à chaque tick périodique, si le canal n'est plus actif (`realtimeActif`). **Le polling 60 s reste le secours** (canal coupé, table non publiée, hors ligne).
+- ⚠️ **Publication Realtime obligatoire côté Supabase** : par défaut les tables ne sont PAS dans la publication `supabase_realtime` → aucun événement n'arrive (le canal se connecte, `SUBSCRIBED`, mais rien ne tombe — diagnostic : `clientSupabase.realtime.getChannels()` → `subscriptions` vide, et aucun pull après un changement REST direct). Le `schema.sql` inclut maintenant le bloc `alter publication supabase_realtime add table public.mots/categories;` (idempotent via `pg_publication_tables`) à exécuter **une fois** (ou Database → Replication dans le dashboard). Sans ça, seule la sync périodique 60 s fonctionne.
+- **Rafraîchissement de l'écran après pull** : `tirerChangements()` retourne le nombre d'enregistrements appliqués ; si > 0, `rafraichirEcranApresSync()` re-rend la Liste (en conservant la recherche, `afficherListeMots` relit `#champ-recherche`) ou les Catégories et met à jour l'indicateur. Ne touche jamais l'écran détail / quiz en cours / formulaire.
 - **Indicateurs UI** : `#indicateur-sync` (en-tête Liste, discret) + `#zone-statut-sync` (Paramètres). `mettreAJourIndicateurSync()` (sync.js) gère les deux.
 - **Ordre auth → sync** : `auth.js` pose la session et appelle `migrerEtSynchroniser()`/`demarrerSyncPourUtilisateur()` ; `sync.js` ne fait rien sans `obtenirUtilisateurCourant()`.
 
@@ -151,7 +156,7 @@ Helpers de dates partagés (db.js) : `parserDateRevision` (accepte les deux form
 
 - Stratégie cache-first ; navigation servie depuis `index.html` en cache.
 - **Les requêtes vers `*.supabase.co` ne sont JAMAIS interceptées** (ni cache, ni service depuis le cache) — sinon la PWA servirait des données/sessions périmées.
-- **Quand on modifie un fichier de l'app, incrémenter `NOM_CACHE`** (actuellement `vocab-cache-v21`) pour forcer le re-téléchargement chez les utilisateurs. Sans ça, la PWA continue de servir l'ancienne version.
+- **Quand on modifie un fichier de l'app, incrémenter `NOM_CACHE`** (actuellement `vocab-cache-v26`) pour forcer le re-téléchargement chez les utilisateurs. Sans ça, la PWA continue de servir l'ancienne version.
 
 ## Conventions de code
 
@@ -183,3 +188,4 @@ Helpers de dates partagés (db.js) : `parserDateRevision` (accepte les deux form
 - **L'aperçu local peut rester sur l'ancienne version** : le service worker sert la page en cache (cache-first). Après une modification, purger les caches et désenregistrer le SW depuis la console (`caches.keys()`, `navigator.serviceWorker.getRegistrations()`) puis recharger — ou simplement incrémenter `NOM_CACHE`.
 - **Tester le flux d'auth sans compte réel** : `clientSupabase` et `utilisateurCourant` sont des bindings globaux réassignables depuis la console — on peut injecter un faux client (méthodes `auth.getSession/onAuthStateChange/signInWithPassword/signUp/signOut` + `from().upsert()/select()`) et rejouer `initialiserAuth()` pour passer tout le flux (migration, push/pull, UI) sans réseau. Ne pas oublier de nettoyer (`localStorage`, `sync_migre_*`, base) ensuite.
 - **Le projet Supabase de production exige la confirmation d'email** (`mailer_autoconfirm: false`) : une inscription crée un compte non confirmé sans session — tester la connexion nécessite de cliquer le lien de l'email (Site URL doit pointer vers l'app).
+- **Realtime ne remonte jamais les changements si la table n'est pas dans la publication `supabase_realtime`** — vérifier le `schema.sql` (bloc ALTER PUBLICATION) avant de chercher un bug dans sync.js. Le canal se connecte quand même (`SUBSCRIBED`), c'est ce qui rend le diagnostic piégeux.

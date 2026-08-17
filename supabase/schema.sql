@@ -66,5 +66,19 @@ create index if not exists idx_categories_date_modification on public.categories
 create index if not exists idx_mots_user_id on public.mots (user_id);
 create index if not exists idx_mots_date_modification on public.mots (date_modification);
 
+-- ---- Realtime : synchronisation instantanée entre appareils ----
+-- OBLIGATOIRE : sans ces lignes, Supabase ne publie PAS les changements sur
+-- Realtime (les tables ne sont pas dans la publication par défaut) et l'app
+-- se rabat sur le polling de secours (60 s). À exécuter UNE FOIS (idempotent).
+do $$
+begin
+  if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'mots') then
+    alter publication supabase_realtime add table public.mots;
+  end if;
+  if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'categories') then
+    alter publication supabase_realtime add table public.categories;
+  end if;
+end $$;
+
 -- ---- Vérification (facultatif) ----
 -- select * from pg_policies where tablename in ('mots', 'categories');

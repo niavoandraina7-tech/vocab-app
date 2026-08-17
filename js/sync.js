@@ -16,8 +16,16 @@ let synchroEnCours = false;
 let minuteurPeriodique = null;
 let minuteurDiffere = null;
 
+// Canal temps réel (Supabase Realtime) : notifications immédiates de changement
+// distant. Le polling périodique reste en secours (Realtime indisponible,
+// hors ligne, etc.).
+let canalRealtime = null;
+let realtimeActif = false;
+let minuteurRealtime = null; // anti-rafale : regroupe les événements rapprochés
+
 const INTERVALLE_SYNC_MS = 60 * 1000; // tentative périodique : 1 minute
 const DELAI_SYNC_APRES_MODIFICATION_MS = 3000; // différé après une modification locale
+const DELAI_REALTIME_MS = 800; // anti-rafale après un événement temps réel
 
 /**
  * Retourne l'état courant de la synchronisation (pour l'affichage).
@@ -47,14 +55,96 @@ function planifierSync() {
  */
 function demarrerSyncPourUtilisateur() {
   arreterSync();
+  const user = obtenirUtilisateurCourant();
+  if (user) {
+    demarrerRealtime(user.id);
+  }
   minuteurPeriodique = setInterval(() => {
     if (navigator.onLine !== false) {
+      // Secours : si le canal temps réel n'est pas actif (erreur, timeout,
+      // reconnexion réseau), le relancer — le polling couvre l'intervalle.
+      if (!realtimeActif && obtenirUtilisateurCourant() && obtenirClientSupabase()) {
+        demarrerRealtime(obtenirUtilisateurCourant().id);
+      }
       synchroniser();
     }
   }, INTERVALLE_SYNC_MS);
   if (navigator.onLine !== false) {
     synchroniser();
   }
+}
+
+// ---- Temps réel (Supabase Realtime) ----
+
+/**
+ * Écoute les modifications des tables « mots » et « categories » de l'utilisateur
+ * via Supabase Realtime (websocket). Chaque événement déclenche une synchronisation
+ * différée et anti-rafale. La boucle périodique reste en secours.
+ * @param {string} userId
+ */
+function demarrerRealtime(userId) {
+  arreterRealtime();
+  const client = obtenirClientSupabase();
+  if (!client || typeof client.channel !== 'function') {
+    return;
+  }
+
+  const declencherSynchronisation = () => {
+    if (minuteurRealtime) {
+      clearTimeout(minuteurRealtime);
+    }
+    minuteurRealtime = setTimeout(() => {
+      minuteurRealtime = null;
+      if (obtenirUtilisateurCourant() && navigator.onLine !== false) {
+        synchroniser();
+      }
+    }, DELAI_REALTIME_MS);
+  };
+
+  canalRealtime = client.channel(`sync-${userId}`);
+  canalRealtime
+    .on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table: 'mots',
+      filter: `user_id=eq.${userId}`
+    }, declencherSynchronisation)
+    .on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table: 'categories',
+      filter: `user_id=eq.${userId}`
+    }, declencherSynchronisation)
+    .subscribe((statut) => {
+      if (statut === 'SUBSCRIBED') {
+        realtimeActif = true;
+      } else if (statut === 'CHANNEL_ERROR' || statut === 'TIMED_OUT' || statut === 'CLOSED') {
+        realtimeActif = false;
+        console.warn(`Realtime Supabase indisponible (${statut}) — le polling périodique prend le relais.`);
+      }
+    });
+}
+
+/**
+ * Ferme le canal temps réel (déconnexion, changement d'utilisateur).
+ */
+function arreterRealtime() {
+  if (minuteurRealtime) {
+    clearTimeout(minuteurRealtime);
+    minuteurRealtime = null;
+  }
+  if (canalRealtime) {
+    const client = obtenirClientSupabase();
+    if (client && typeof client.removeChannel === 'function') {
+      try {
+        client.removeChannel(canalRealtime);
+      } catch (erreur) {
+        console.warn('Erreur en fermant le canal temps réel', erreur);
+      }
+    }
+    canalRealtime = null;
+  }
+  realtimeActif = false;
 }
 
 /**
@@ -69,6 +159,7 @@ function arreterSync() {
     clearTimeout(minuteurDiffere);
     minuteurDiffere = null;
   }
+  arreterRealtime();
   synchroEnCours = false;
   etatSync = 'inactif';
   mettreAJourIndicateurSync();
@@ -81,6 +172,8 @@ function arreterSync() {
 function initialiserSync() {
   window.addEventListener('online', () => {
     if (obtenirUtilisateurCourant() && navigator.onLine !== false) {
+      // Relance le canal temps réel (le websocket a pu se couper hors ligne)
+      demarrerRealtime(obtenirUtilisateurCourant().id);
       synchroniser();
     }
   });
@@ -120,9 +213,14 @@ async function synchroniser() {
 
   try {
     await pousserChangements(client, user.id);
-    await tirerChangements(client, user.id);
+    const nbAppliques = await tirerChangements(client, user.id);
     derniereSync = new Date();
     etatSync = 'synchronise';
+    // Une donnée distante a changé (autre appareil, temps réel) :
+    // rafraîchit l'écran en cours pour que l'utilisateur voie le résultat.
+    if (nbAppliques > 0) {
+      rafraichirEcranApresSync();
+    }
   } catch (erreur) {
     // Jamais bloquant : les données locales restent intactes, on retentera plus tard
     console.error('Erreur de synchronisation (nouvelle tentative automatique)', erreur);
@@ -174,6 +272,7 @@ async function pousserChangements(client, userId) {
  * synchronisation connue, puis les fusionne localement (LWW).
  * @param {import('@supabase/supabase-js').SupabaseClient} client
  * @param {string} userId
+ * @returns {Promise<number>} Nombre d'enregistrements effectivement appliqués
  */
 async function tirerChangements(client, userId) {
   const cle = `sync_dernier_pull_${userId}`;
@@ -186,10 +285,13 @@ async function tirerChangements(client, userId) {
 
   let dateMax = depuis;
   let aRepousser = false;
+  let nbAppliques = 0;
 
   for (const ligne of categoriesDistant) {
     const resultat = await appliquerDistant('categories', modifierCategorie, ligneVersCategorie(ligne));
-    if (resultat === 'repousser') {
+    if (resultat === 'applique') {
+      nbAppliques++;
+    } else if (resultat === 'repousser') {
       aRepousser = true;
     }
     if (ligne.date_modification > dateMax) {
@@ -199,7 +301,9 @@ async function tirerChangements(client, userId) {
 
   for (const ligne of motsDistant) {
     const resultat = await appliquerDistant('mots', modifierMot, ligneVersMot(ligne));
-    if (resultat === 'repousser') {
+    if (resultat === 'applique') {
+      nbAppliques++;
+    } else if (resultat === 'repousser') {
       aRepousser = true;
     }
     if (ligne.date_modification > dateMax) {
@@ -213,6 +317,32 @@ async function tirerChangements(client, userId) {
   // repousse à la prochaine occasion (elle a été remise en attente ci-dessus).
   if (aRepousser) {
     planifierSync();
+  }
+
+  return nbAppliques;
+}
+
+/**
+ * Rafraîchit l'écran visible après qu'un pull a appliqué des changements
+ * distants (Liste, Catégories, statut de sync) — sans toucher aux autres écrans
+ * (détail, quiz en cours, formulaire d'ajout).
+ */
+function rafraichirEcranApresSync() {
+  const ecranActif = document.querySelector('.ecran.active');
+  if (!ecranActif) {
+    return;
+  }
+  const id = ecranActif.id;
+  if (id === 'ecran-liste' && typeof afficherListeMots === 'function') {
+    afficherListeMots();
+    if (typeof mettreAJourBandeauRappel === 'function') {
+      mettreAJourBandeauRappel();
+    }
+  } else if (id === 'ecran-categories' && typeof afficherCategories === 'function') {
+    afficherCategories();
+  }
+  if (typeof mettreAJourIndicateurSync === 'function') {
+    mettreAJourIndicateurSync();
   }
 }
 

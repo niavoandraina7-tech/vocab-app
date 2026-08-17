@@ -207,7 +207,126 @@ function erreurTraduite(message) {
   if (bas.includes('email address is invalid') || bas.includes('invalid email')) {
     return 'Adresse email invalide.';
   }
+  if (bas.includes('rate limit') || bas.includes('too many requests') || bas.includes('429')) {
+    return 'Trop de tentatives (limite de sécurité). Réessayez plus tard, idéalement dans une heure.';
+  }
+  if (bas.includes('different from the old password') || bas.includes('different from your old password')) {
+    return 'Le nouveau mot de passe doit être différent de l\'ancien.';
+  }
+  if (bas.includes('already confirmed')) {
+    return 'Cet email est déjà confirmé.';
+  }
+  if (bas.includes('password')) {
+    return 'Mot de passe refusé. Vérifiez qu\'il fait au moins 6 caractères.';
+  }
   return message || 'Erreur inconnue.';
+}
+
+// ---- Actions de la section Compte (Paramètres) ----
+
+/**
+ * Affiche un message dans la section Compte (paramètres).
+ * @param {string} texte
+ * @param {'info'|'erreur'} type
+ */
+function afficherMessageCompte(texte, type = 'info') {
+  const message = document.getElementById('message-compte');
+  if (!message) {
+    return;
+  }
+  message.textContent = texte;
+  message.hidden = false;
+  message.className = `message-connexion message-${type}`;
+}
+
+/**
+ * Efface le message de la section Compte.
+ */
+function effacerMessageCompte() {
+  const message = document.getElementById('message-compte');
+  if (!message) {
+    return;
+  }
+  message.hidden = true;
+  message.textContent = '';
+}
+
+/**
+ * Affiche ou masque le formulaire de changement de mot de passe, et met à jour
+ * le libellé du bouton qui le contrôle.
+ */
+function basculerFormulaireMotDePasse() {
+  const form = document.getElementById('form-changer-motdepasse');
+  const bouton = document.getElementById('btn-changer-motdepasse');
+  if (!form || !bouton) {
+    return;
+  }
+  form.hidden = !form.hidden;
+  bouton.textContent = form.hidden ? 'Changer le mot de passe' : 'Annuler';
+  if (form.hidden) {
+    effacerMessageCompte();
+  } else {
+    document.getElementById('champ-nouveau-motdepasse').focus();
+  }
+}
+
+/**
+ * Change le mot de passe de l'utilisateur connecté (session déjà active).
+ */
+function changerMotDePasse() {
+  const nouveau = document.getElementById('champ-nouveau-motdepasse').value;
+  const confirmation = document.getElementById('champ-confirmation-motdepasse').value;
+  effacerMessageCompte();
+
+  if (nouveau.length < 6) {
+    afficherMessageCompte('Le mot de passe doit contenir au moins 6 caractères.', 'erreur');
+    return;
+  }
+  if (nouveau !== confirmation) {
+    afficherMessageCompte('Les deux mots de passe ne correspondent pas.', 'erreur');
+    return;
+  }
+  if (!clientSupabase) {
+    afficherMessageCompte('Supabase n\'est pas configuré : renseignez js/config.js puis rechargez l\'app.', 'erreur');
+    return;
+  }
+
+  clientSupabase.auth.updateUser({ password: nouveau })
+    .then(({ error }) => {
+      if (error) {
+        throw error;
+      }
+      afficherMessageCompte('Mot de passe modifié avec succès.', 'info');
+      // Referme le formulaire et vide les champs
+      const form = document.getElementById('form-changer-motdepasse');
+      form.hidden = true;
+      document.getElementById('btn-changer-motdepasse').textContent = 'Changer le mot de passe';
+      document.getElementById('champ-nouveau-motdepasse').value = '';
+      document.getElementById('champ-confirmation-motdepasse').value = '';
+    })
+    .catch((erreur) => {
+      afficherMessageCompte(erreurTraduite(erreur && erreur.message), 'erreur');
+    });
+}
+
+/**
+ * Renvoie l'email de confirmation (utilisable quand le compte n'est pas confirmé).
+ */
+function renvoyerEmailConfirmation() {
+  if (!clientSupabase || !utilisateurCourant) {
+    return;
+  }
+  effacerMessageCompte();
+  clientSupabase.auth.resend({ type: 'signup', email: utilisateurCourant.email })
+    .then(({ error }) => {
+      if (error) {
+        throw error;
+      }
+      afficherMessageCompte('Email de confirmation renvoyé. Vérifiez votre boîte de réception.', 'info');
+    })
+    .catch((erreur) => {
+      afficherMessageCompte(erreurTraduite(erreur && erreur.message), 'erreur');
+    });
 }
 
 // ---- Section Compte (écran Paramètres) ----
@@ -251,10 +370,27 @@ function afficherZoneCompte() {
   email.className = 'compte-email';
   email.textContent = `👤 ${utilisateurCourant.email}`;
 
+  // Badge de confirmation d'email (avec bouton de renvoi si non confirmé)
+  const confirmation = document.createElement('p');
+  confirmation.className = 'compte-confirmation';
+  if (utilisateurCourant.emailConfirme) {
+    confirmation.textContent = '✅ Email confirmé';
+    confirmation.classList.add('confirme');
+  } else {
+    confirmation.textContent = '⚠️ Email non confirmé — renvoyez le lien si nécessaire.';
+    confirmation.classList.add('non-confirme');
+  }
+
   // Statut de synchronisation : rempli par sync.js
   const statut = document.createElement('div');
   statut.id = 'zone-statut-sync';
   statut.className = 'statut-sync';
+
+  // Message de retour des actions (changement de mot de passe, renvoi d'email)
+  const message = document.createElement('div');
+  message.id = 'message-compte';
+  message.className = 'message-connexion';
+  message.hidden = true;
 
   const actions = document.createElement('div');
   actions.className = 'actions-compte';
@@ -269,14 +405,50 @@ function afficherZoneCompte() {
     }
   });
 
+  const btnChangerMdp = document.createElement('button');
+  btnChangerMdp.type = 'button';
+  btnChangerMdp.id = 'btn-changer-motdepasse';
+  btnChangerMdp.className = 'btn-secondaire';
+  btnChangerMdp.textContent = 'Changer le mot de passe';
+  btnChangerMdp.addEventListener('click', basculerFormulaireMotDePasse);
+
+  const btnRenvoyer = document.createElement('button');
+  btnRenvoyer.type = 'button';
+  btnRenvoyer.id = 'btn-renvoyer-confirmation';
+  btnRenvoyer.className = 'btn-secondaire';
+  btnRenvoyer.textContent = 'Renvoyer l\'email de confirmation';
+  btnRenvoyer.hidden = utilisateurCourant.emailConfirme;
+  btnRenvoyer.addEventListener('click', renvoyerEmailConfirmation);
+
   const btnDeconnexion = document.createElement('button');
   btnDeconnexion.type = 'button';
   btnDeconnexion.className = 'btn-secondaire';
   btnDeconnexion.textContent = 'Se déconnecter';
   btnDeconnexion.addEventListener('click', seDeconnecter);
 
-  actions.append(btnSynchroniser, btnDeconnexion);
-  zone.append(email, statut, actions);
+  actions.append(btnSynchroniser, btnChangerMdp, btnRenvoyer, btnDeconnexion);
+  zone.append(email, confirmation, statut, message, actions);
+
+  // Formulaire de changement de mot de passe (masqué par défaut)
+  const form = document.createElement('form');
+  form.id = 'form-changer-motdepasse';
+  form.hidden = true;
+  form.innerHTML = `
+    <label for="champ-nouveau-motdepasse">Nouveau mot de passe (6 caractères min.)</label>
+    <input type="password" id="champ-nouveau-motdepasse" minlength="6" required autocomplete="new-password">
+    <label for="champ-confirmation-motdepasse">Confirmer le nouveau mot de passe</label>
+    <input type="password" id="champ-confirmation-motdepasse" required autocomplete="new-password">
+    <div class="actions-formulaire">
+      <button type="submit">Enregistrer</button>
+      <button type="button" class="btn-lien" id="btn-annuler-motdepasse">Annuler</button>
+    </div>
+  `;
+  form.addEventListener('submit', (evenement) => {
+    evenement.preventDefault();
+    changerMotDePasse();
+  });
+  form.querySelector('#btn-annuler-motdepasse').addEventListener('click', basculerFormulaireMotDePasse);
+  zone.append(form);
 
   // Met à jour le statut immédiatement (sync.js remplit #zone-statut-sync)
   if (typeof mettreAJourIndicateurSync === 'function') {
@@ -404,7 +576,11 @@ function initialiserAuth() {
     }
 
     if (session) {
-      utilisateurCourant = { id: session.user.id, email: session.user.email };
+      utilisateurCourant = {
+        id: session.user.id,
+        email: session.user.email,
+        emailConfirme: !!session.user.email_confirmed_at
+      };
       const cleMigration = `sync_migre_${session.user.id}`;
 
       if (localStorage.getItem(cleMigration) !== '1') {
