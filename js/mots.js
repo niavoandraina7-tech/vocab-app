@@ -4,16 +4,6 @@
 let motEnEditionId = null;
 
 /**
- * Traduit un niveau de maîtrise en libellé lisible.
- * @param {string} niveau - 'nouveau', 'en_cours' ou 'acquis'
- * @returns {string}
- */
-function libelleNiveau(niveau) {
-  const libelles = { nouveau: 'Nouveau', en_cours: 'En cours', acquis: 'Acquis' };
-  return libelles[niveau] || niveau;
-}
-
-/**
  * (Re)remplit une liste déroulante de filtre catégorie avec l'arbre complet.
  * @param {HTMLSelectElement} select - L'élément <select> à remplir
  * @param {Array<Object>} categories - Liste plate des catégories
@@ -245,6 +235,8 @@ function ouvrirEditionMot(id) {
     document.getElementById('champ-definition').value = mot.definition || '';
     document.getElementById('champ-exemple').value = mot.exemple || '';
     document.getElementById('champ-langue').value = mot.langue || '';
+    // Pré-sélectionne un délai 1..7 si la prochaineRevision est proche, sinon Automatique
+    document.getElementById('champ-prochaine-revision').value = valeurPourSelectDelai(mot.prochaineRevision);
     document.getElementById('btn-supprimer-mot').hidden = false;
     remplirSelectionCategories(mot.categorieIds || []);
 
@@ -274,6 +266,11 @@ function initialiserFormulaireMot() {
     const definition = document.getElementById('champ-definition').value.trim();
     const exemple = document.getElementById('champ-exemple').value.trim();
     const langue = document.getElementById('champ-langue').value.trim();
+    // Délai choisi par l'utilisateur ('' = automatique), convertir en date AAAA-MM-JJ
+    const delaiSelectionne = document.getElementById('champ-prochaine-revision').value;
+    const prochaineRevision = delaiSelectionne
+      ? dateEnLocalAAJJMMJJ(new Date(Date.now() + parseInt(delaiSelectionne, 10) * 24 * 60 * 60 * 1000))
+      : null;
 
     if (motEnEditionId) {
       // Édition : on conserve dateCreation et historiqueRevision de l'existant
@@ -289,6 +286,7 @@ function initialiserFormulaireMot() {
           exemple,
           langue,
           categorieIds,
+          prochaineRevision,
           dateModification: maintenant
         });
       }).then(() => afficherEcran('liste'))
@@ -302,6 +300,7 @@ function initialiserFormulaireMot() {
         exemple,
         langue,
         categorieIds,
+        prochaineRevision,
         dateCreation: maintenant,
         dateModification: maintenant,
         niveauMaitrise: 'nouveau',

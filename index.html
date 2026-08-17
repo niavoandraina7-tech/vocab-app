@@ -25,6 +25,14 @@
         <option value="">Toutes les catégories</option>
       </select>
       <button id="btn-gestion-categories" class="btn-secondaire" type="button">Gérer les catégories</button>
+      <div class="legende-niveaux" aria-label="Signification des niveaux de maîtrise">
+        <span class="badge badge-nouveau">À apprendre</span>
+        <span>jamais révisé</span>
+        <span class="badge badge-en_cours">En apprentissage</span>
+        <span>encore fragile, à revoir régulièrement</span>
+        <span class="badge badge-acquis">Maîtrisé</span>
+        <span>bien connu, révisions espacées</span>
+      </div>
       <ul id="liste-mots"></ul>
     </section>
 
@@ -56,6 +64,19 @@
 
         <label for="champ-langue">Langue</label>
         <input type="text" id="champ-langue" placeholder="ex : fr, en, technique" autocomplete="off">
+
+        <label for="champ-prochaine-revision">Prochaine révision (optionnel)</label>
+        <select id="champ-prochaine-revision" aria-label="Retarder la prochaine révision de">
+          <option value="">Automatique (selon le niveau)</option>
+          <option value="1">Dans 1 jour</option>
+          <option value="2">Dans 2 jours</option>
+          <option value="3">Dans 3 jours</option>
+          <option value="4">Dans 4 jours</option>
+          <option value="5">Dans 5 jours</option>
+          <option value="6">Dans 6 jours</option>
+          <option value="7">Dans 7 jours</option>
+        </select>
+        <p class="conseil">Laissez sur « Automatique » pour que l'application programme la prochaine révision selon le niveau, ou choisissez un délai (1–7 jours). Vous pouvez aussi modifier ce réglage depuis l'écran Révision avec le bouton 📅 de chaque mot.</p>
 
         <fieldset>
           <legend>Catégories</legend>

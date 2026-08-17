@@ -61,10 +61,14 @@ function mettreAJourBandeauRappel() {
  */
 function motsEnAttenteDepuisJours(mots, categories, jours) {
   return selectionnerMotsAReviser(mots, '', categories).filter((mot) => {
+    // La date de référence est la prochaine révision programmée si elle existe,
+    // sinon la dernière révision (ou la création pour un mot jamais révisé).
     const historique = mot.historiqueRevision || [];
-    const dateReference = historique.length > 0
-      ? new Date(historique[historique.length - 1].date)
-      : new Date(mot.dateCreation);
+    const dateReference = mot.prochaineRevision
+      ? parserDateRevision(mot.prochaineRevision)
+      : (historique.length > 0
+          ? new Date(historique[historique.length - 1].date)
+          : new Date(mot.dateCreation));
     const diffJours = (Date.now() - dateReference.getTime()) / (1000 * 60 * 60 * 24);
     return diffJours >= jours;
   });

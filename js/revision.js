@@ -7,13 +7,19 @@ const SEUILS_REVISION = { nouveau: 3, en_cours: 7, acquis: 14 };
 let motEnRevision = null;
 
 /**
- * Un mot est « à réviser » s'il n'a jamais été révisé,
- * ou si sa dernière révision date de plus du seuil (en jours) de son niveau.
+ * Un mot est « à réviser » s'il n'a jamais été révisé, si sa prochaine
+ * révision programmée est atteinte (ou dépassée), ou — pour les mots créés
+ * avant la programmation — si sa dernière révision date de plus du seuil
+ * (en jours) de son niveau.
  * @param {Object} mot
  * @param {Date} maintenant - Date de référence (utile pour les tests)
  * @returns {boolean}
  */
 function estAReviser(mot, maintenant = new Date()) {
+  // Une prochaine révision explicitement programmée fait foi
+  if (mot.prochaineRevision) {
+    return parserDateRevision(mot.prochaineRevision) <= maintenant;
+  }
   const historique = mot.historiqueRevision || [];
   if (historique.length === 0) {
     return true;
@@ -25,6 +31,21 @@ function estAReviser(mot, maintenant = new Date()) {
 }
 
 /**
+ * Filtre les mots appartenant à une catégorie (en incluant ses sous-catégories).
+ * @param {Array<Object>} mots
+ * @param {string} idCategorie - '' pour toutes les catégories
+ * @param {Array<Object>} categories
+ * @returns {Array<Object>}
+ */
+function filtrerMotsParCategorie(mots, idCategorie, categories) {
+  if (!idCategorie) {
+    return mots;
+  }
+  const idsCategorie = obtenirIdsCategorieEtSousCategories(idCategorie, categories);
+  return mots.filter((mot) => (mot.categorieIds || []).some((id) => idsCategorie.has(id)));
+}
+
+/**
  * Sélectionne les mots à réviser, éventuellement restreints à une catégorie
  * (en incluant ses sous-catégories).
  * @param {Array<Object>} mots
@@ -33,16 +54,7 @@ function estAReviser(mot, maintenant = new Date()) {
  * @returns {Array<Object>}
  */
 function selectionnerMotsAReviser(mots, idCategorie, categories) {
-  let idsCategorie = null;
-  if (idCategorie) {
-    idsCategorie = obtenirIdsCategorieEtSousCategories(idCategorie, categories);
-  }
-
-  return mots.filter((mot) => {
-    const correspondCategorie = !idsCategorie
-      || (mot.categorieIds || []).some((id) => idsCategorie.has(id));
-    return correspondCategorie && estAReviser(mot);
-  });
+  return filtrerMotsParCategorie(mots, idCategorie, categories).filter((mot) => estAReviser(mot));
 }
 
 /**
@@ -67,25 +79,30 @@ function calculerNouveauNiveau(niveauActuel, resultat) {
 }
 
 /**
- * Enregistre une évaluation : ajoute à l'historique, met à jour dateModification
- * et le niveau de maîtrise, puis persiste en IndexedDB.
+ * Enregistre une évaluation : ajoute à l'historique, met à jour dateModification,
+ * le niveau de maîtrise et la prochaine révision (seuil du nouveau niveau),
+ * puis persiste en IndexedDB.
  * @param {Object} mot
  * @param {string} resultat
  * @returns {Promise<Object>} Le mot mis à jour
  */
 function enregistrerEvaluation(mot, resultat) {
-  const maintenant = new Date().toISOString();
+  const maintenant = new Date();
+  const niveau = calculerNouveauNiveau(mot.niveauMaitrise, resultat);
+  const seuil = SEUILS_REVISION[niveau] || SEUILS_REVISION.nouveau;
+  const prochaine = new Date(maintenant.getTime() + seuil * 24 * 60 * 60 * 1000);
   const motMaj = {
     ...mot,
-    niveauMaitrise: calculerNouveauNiveau(mot.niveauMaitrise, resultat),
-    dateModification: maintenant,
-    historiqueRevision: [...(mot.historiqueRevision || []), { date: maintenant, resultat }]
+    niveauMaitrise: niveau,
+    dateModification: maintenant.toISOString(),
+    prochaineRevision: prochaine.toISOString(),
+    historiqueRevision: [...(mot.historiqueRevision || []), { date: maintenant.toISOString(), resultat }]
   };
   return modifierMot(motMaj).then(() => motMaj);
 }
 
 /**
- * Point d'entrée principal : affiche la liste des mots à réviser (avec filtre).
+ * Point d'entrée principal : affiche l'écran Révision (accueil, session ou fin).
  * C'est l'écran par défaut de l'onglet Révision.
  */
 function afficherEcranRevision() {
@@ -99,8 +116,9 @@ function afficherEcranRevision() {
 }
 
 /**
- * Affiche la liste des mots à réviser + filtre catégorie.
- * Chaque mot est cliquable pour démarrer sa révision individuelle.
+ * Affiche la liste des mots de l'onglet Révision, en deux sections :
+ * « À réviser » (mots arrivés à échéance) et « Prochaine révision »
+ * (mots récemment révisés ou programmés, simplement retardés, jamais supprimés).
  */
 function afficherListeMotsAReviser() {
   // Si une session de quiz était en cours, on l'arrête proprement
@@ -152,11 +170,11 @@ function afficherListeMotsAReviser() {
       label.htmlFor = 'filtre-categorie-revision';
       label.textContent = 'Filtrer par catégorie (optionnel)';
 
-      // Conteneur pour la liste des mots à réviser
+      // Conteneur des deux sections de la liste
       const listeConteneur = document.createElement('div');
       listeConteneur.id = 'liste-mots-revision';
       listeConteneur.className = 'liste-mots-revision';
-      rendreListeMotsAReviser(listeConteneur, motsAReviser, categories, true); // true = cliquable pour réviser
+      rendreListesRevision(listeConteneur, mots, categories, filtreInitial);
 
       conteneur.append(compteur, btnQuiz, label, select, listeConteneur);
     })
@@ -179,20 +197,34 @@ function mettreAJourListeMotsAReviser(idCategorie, mots, categories) {
       ? 'Aucun mot à réviser aujourd\'hui, bien joué !'
       : `${motsAReviser.length} mot(s) à réviser aujourd'hui.`;
   }
-  rendreListeMotsAReviser(listeConteneur, motsAReviser, categories, true);
+  rendreListesRevision(listeConteneur, mots, categories, idCategorie);
 }
 
 /**
- * Rend la liste des mots à réviser dans le conteneur donné.
+ * Rend les deux sections de la liste : « À réviser » puis « Prochaine révision ».
  * @param {HTMLElement} conteneur
- * @param {Array<Object>} motsAReviser
+ * @param {Array<Object>} mots - Tous les mots
  * @param {Array<Object>} categories
- * @param {boolean} cliquable - Si true, clic sur un mot ouvre sa révision
+ * @param {string} idCategorie - Catégorie filtrée (vide = toutes)
  */
-function rendreListeMotsAReviser(conteneur, motsAReviser, categories, cliquable = false) {
+function rendreListesRevision(conteneur, mots, categories, idCategorie) {
   conteneur.innerHTML = '';
 
-  if (motsAReviser.length === 0) {
+  const motsDeLaCategorie = filtrerMotsParCategorie(mots, idCategorie, categories);
+  const aReviser = motsDeLaCategorie.filter((mot) => estAReviser(mot));
+  const programmes = motsDeLaCategorie
+    .filter((mot) => !estAReviser(mot))
+    .sort((a, b) => obtenirProchaineRevisionDate(a) - obtenirProchaineRevisionDate(b));
+
+  if (mots.length === 0) {
+    const message = document.createElement('p');
+    message.className = 'revision-liste-vide';
+    message.textContent = 'Aucun mot pour le moment. Ajoutez votre premier mot !';
+    conteneur.appendChild(message);
+    return;
+  }
+
+  if (aReviser.length === 0 && programmes.length === 0) {
     const message = document.createElement('p');
     message.className = 'revision-liste-vide';
     message.textContent = 'Aucun mot à réviser pour ce filtre.';
@@ -200,78 +232,219 @@ function rendreListeMotsAReviser(conteneur, motsAReviser, categories, cliquable 
     return;
   }
 
+  if (aReviser.length > 0) {
+    const titre = document.createElement('h3');
+    titre.className = 'titre-section-revision';
+    titre.textContent = `À réviser (${aReviser.length})`;
+    const ul = document.createElement('ul');
+    ul.className = 'liste-mots-revision-ul';
+    aReviser.forEach((mot) => ul.appendChild(construireEntreeRevision(mot, categories, { cliquable: true })));
+    conteneur.append(titre, ul);
+  }
+
+  if (programmes.length > 0) {
+    const titre = document.createElement('h3');
+    titre.className = 'titre-section-revision';
+    titre.textContent = 'Prochaine révision';
+    const ul = document.createElement('ul');
+    ul.className = 'liste-mots-revision-ul';
+    programmes.forEach((mot) => ul.appendChild(construireEntreeRevision(mot, categories, { programme: true })));
+    conteneur.append(titre, ul);
+  }
+}
+
+/**
+ * Construit l'entrée (li) d'un mot dans la liste de révision.
+ * @param {Object} mot
+ * @param {Array<Object>} categories
+ * @param {{cliquable?: boolean, programme?: boolean}} options
+ * @returns {HTMLLIElement}
+ */
+function construireEntreeRevision(mot, categories, { cliquable = false, programme = false } = {}) {
+  const li = document.createElement('li');
+  li.className = 'entree-mot-revision' + (cliquable ? ' cliquable' : '') + (programme ? ' programme' : '');
+
+  const motEl = document.createElement('div');
+  motEl.className = 'mot-titre-revision';
+  motEl.textContent = mot.mot;
+
+  const badge = document.createElement('span');
+  badge.className = `badge badge-${mot.niveauMaitrise || 'nouveau'}`;
+  badge.textContent = libelleNiveau(mot.niveauMaitrise || 'nouveau');
+
+  const detail = document.createElement('div');
+  detail.className = 'mot-detail-revision';
+  detail.textContent = mot.definition || '(aucune définition)';
+
   const nomsCategories = new Map(categories.map((c) => [c.id, c.nom]));
+  const nomsCategorie = (mot.categorieIds || [])
+    .map((id) => nomsCategories.get(id))
+    .filter(Boolean)
+    .join(', ');
 
-  // Tri : plus anciens en révision d'abord (ceux qui attendent depuis le plus longtemps)
-  const motsTries = [...motsAReviser].sort((a, b) => {
-    const histA = a.historiqueRevision || [];
-    const histB = b.historiqueRevision || [];
-    const dateA = histA.length > 0 ? new Date(histA[histA.length - 1].date).getTime() : new Date(a.dateCreation).getTime();
-    const dateB = histB.length > 0 ? new Date(histB[histB.length - 1].date).getTime() : new Date(b.dateCreation).getTime();
-    return dateA - dateB;
+  const tempsEl = document.createElement('div');
+  tempsEl.className = 'mot-temps-revision';
+  tempsEl.textContent = programme ? libelleProchaineRevision(mot) : libelleEnAttente(mot);
+
+  const btnDate = creerBoutonDateRevision(mot);
+
+  li.append(motEl, badge, detail);
+  if (nomsCategorie) {
+    const categoriesEl = document.createElement('div');
+    categoriesEl.className = 'mot-categories-revision';
+    categoriesEl.textContent = nomsCategorie;
+    li.append(categoriesEl);
+  }
+  li.append(tempsEl, btnDate);
+
+  // Clic sur un mot à réviser → ouvre sa révision individuelle
+  if (cliquable) {
+    li.style.cursor = 'pointer';
+    li.addEventListener('click', () => ouvrirRevisionMot(mot));
+  }
+
+  return li;
+}
+
+/**
+ * Indicateur de temps d'un mot arrivé à échéance.
+ * @param {Object} mot
+ * @returns {string}
+ */
+function libelleEnAttente(mot) {
+  const historique = mot.historiqueRevision || [];
+  const dateReference = mot.prochaineRevision
+    ? parserDateRevision(mot.prochaineRevision)
+    : (historique.length > 0
+        ? new Date(historique[historique.length - 1].date)
+        : new Date(mot.dateCreation));
+  const diffJours = Math.floor((Date.now() - dateReference.getTime()) / (1000 * 60 * 60 * 24));
+
+  if (historique.length === 0 && !mot.prochaineRevision) {
+    return diffJours <= 0
+      ? 'Jamais révisé — à apprendre'
+      : `Jamais révisé (créé il y a ${diffJours} jour(s))`;
+  }
+  if (diffJours <= 0) {
+    return 'À réviser aujourd\'hui';
+  }
+  return `En retard de ${diffJours} jour(s)`;
+}
+
+/**
+ * Indicateur de temps d'un mot programmé (révisé récemment, pas encore à échéance).
+ * @param {Object} mot
+ * @returns {string}
+ */
+function libelleProchaineRevision(mot) {
+  const date = obtenirProchaineRevisionDate(mot);
+  const texte = date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+  const diffJours = Math.ceil((date.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+  if (diffJours <= 1) {
+    return `Prochaine révision : demain (${texte})`;
+  }
+  if (diffJours <= 30) {
+    return `Prochaine révision : ${texte} (dans ${diffJours} jours)`;
+  }
+  return `Prochaine révision : ${texte}`;
+}
+
+/**
+ * Date de la prochaine révision d'un mot : la date programmée si elle existe,
+ * sinon la dernière révision + le seuil du niveau (repli pour les anciens mots).
+ * @param {Object} mot
+ * @returns {Date}
+ */
+function obtenirProchaineRevisionDate(mot) {
+  if (mot.prochaineRevision) {
+    return parserDateRevision(mot.prochaineRevision);
+  }
+  const historique = mot.historiqueRevision || [];
+  const seuil = SEUILS_REVISION[mot.niveauMaitrise] || SEUILS_REVISION.nouveau;
+  const base = historique.length > 0
+    ? new Date(historique[historique.length - 1].date)
+    : new Date(mot.dateCreation);
+  const date = new Date(base);
+  date.setDate(date.getDate() + seuil);
+  return date;
+}
+
+/**
+ * Crée le bouton 📅 qui permet de programmer (ou modifier) la date de
+ * révision d'un mot, directement depuis la liste.
+ * @param {Object} mot
+ * @returns {HTMLButtonElement}
+ */
+function creerBoutonDateRevision(mot) {
+  const bouton = document.createElement('button');
+  bouton.type = 'button';
+  bouton.className = 'btn-date-revision';
+  bouton.textContent = '📅';
+  bouton.title = 'Programmer la prochaine révision';
+  bouton.setAttribute('aria-label', `Programmer la prochaine révision de « ${mot.mot} »`);
+
+  bouton.addEventListener('click', (evenement) => {
+    evenement.stopPropagation(); // ne déclenche pas la révision du mot
+
+    const editeur = document.createElement('div');
+    editeur.className = 'editeur-date-revision';
+
+    // Sélecteur de délai (Automatique ou 1..7 jours)
+    const select = document.createElement('select');
+    select.className = 'select-delai-revision';
+    select.innerHTML = `
+      <option value="">Automatique (selon le niveau)</option>
+      <option value="1">Dans 1 jour</option>
+      <option value="2">Dans 2 jours</option>
+      <option value="3">Dans 3 jours</option>
+      <option value="4">Dans 4 jours</option>
+      <option value="5">Dans 5 jours</option>
+      <option value="6">Dans 6 jours</option>
+      <option value="7">Dans 7 jours</option>
+    `;
+    select.value = valeurPourSelectDelai(mot.prochaineRevision);
+
+    const btnOk = document.createElement('button');
+    btnOk.type = 'button';
+    btnOk.textContent = 'OK';
+    btnOk.addEventListener('click', () => {
+      const valeur = select.value;
+      const dateAAJJMMJJ = valeur
+        ? dateEnLocalAAJJMMJJ(new Date(Date.now() + parseInt(valeur, 10) * 24 * 60 * 60 * 1000))
+        : '';
+      sauvegarderProchaineRevision(mot, dateAAJJMMJJ)
+        .then(() => afficherListeMotsAReviser())
+        .catch((erreur) => console.error('Erreur lors de la programmation de la révision', erreur));
+    });
+
+    const btnAnnuler = document.createElement('button');
+    btnAnnuler.type = 'button';
+    btnAnnuler.className = 'btn-secondaire';
+    btnAnnuler.textContent = 'Annuler';
+    btnAnnuler.addEventListener('click', () => editeur.replaceWith(bouton));
+
+    editeur.append(select, btnOk, btnAnnuler);
+    bouton.replaceWith(editeur);
+    select.focus();
   });
 
-  const ul = document.createElement('ul');
-  ul.className = 'liste-mots-revision-ul';
+  return bouton;
+}
 
-  motsTries.forEach((mot) => {
-    const li = document.createElement('li');
-    li.className = 'entree-mot-revision' + (cliquable ? ' cliquable' : '');
-
-    const motEl = document.createElement('div');
-    motEl.className = 'mot-titre-revision';
-    motEl.textContent = mot.mot;
-
-    const badge = document.createElement('span');
-    badge.className = `badge badge-${mot.niveauMaitrise || 'nouveau'}`;
-    badge.textContent = libelleNiveau(mot.niveauMaitrise || 'nouveau');
-
-    const detail = document.createElement('div');
-    detail.className = 'mot-detail-revision';
-    detail.textContent = mot.definition || '(aucune définition)';
-
-    const nomsCategorie = (mot.categorieIds || [])
-      .map((id) => nomsCategories.get(id))
-      .filter(Boolean)
-      .join(', ');
-
-    let categoriesEl = null;
-    if (nomsCategorie) {
-      categoriesEl = document.createElement('div');
-      categoriesEl.className = 'mot-categories-revision';
-      categoriesEl.textContent = nomsCategorie;
-    }
-
-    // Indicateur "depuis combien de temps" pour la révision
-    const historique = mot.historiqueRevision || [];
-    let indicateurTemps = '';
-    if (historique.length > 0) {
-      const derniereRevision = new Date(historique[historique.length - 1].date);
-      const diffJours = Math.floor((Date.now() - derniereRevision.getTime()) / (1000 * 60 * 60 * 24));
-      indicateurTemps = `Dernière révision : il y a ${diffJours} jour(s)`;
-    } else {
-      const dateCreation = new Date(mot.dateCreation);
-      const diffJours = Math.floor((Date.now() - dateCreation.getTime()) / (1000 * 60 * 60 * 24));
-      indicateurTemps = `Jamais révisé (créé il y a ${diffJours} jour(s))`;
-    }
-    const tempsEl = document.createElement('div');
-    tempsEl.className = 'mot-temps-revision';
-    tempsEl.textContent = indicateurTemps;
-
-    li.append(motEl, badge, detail);
-    if (categoriesEl) li.append(categoriesEl);
-    li.append(tempsEl);
-
-    // Clic sur le mot → ouvre sa révision individuelle
-    if (cliquable) {
-      li.style.cursor = 'pointer';
-      li.addEventListener('click', () => ouvrirRevisionMot(mot));
-    }
-
-    ul.appendChild(li);
-  });
-
-  conteneur.appendChild(ul);
+/**
+ * Enregistre la prochaine révision choisie pour un mot
+ * (vide = programmation automatique selon le niveau).
+ * @param {Object} mot
+ * @param {string} dateAAJJMMJJ - « AAAA-MM-JJ » ou chaîne vide
+ * @returns {Promise<Object>}
+ */
+function sauvegarderProchaineRevision(mot, dateAAJJMMJJ) {
+  const motMaj = {
+    ...mot,
+    prochaineRevision: dateAAJJMMJJ || null,
+    dateModification: new Date().toISOString()
+  };
+  return modifierMot(motMaj);
 }
 
 /**
@@ -334,6 +507,7 @@ function afficherSessionRevisionMot(mot) {
 
 /**
  * Traite l'auto-évaluation d'un mot unique, puis revient à la liste.
+ * Le mot n'est pas supprimé : sa prochaine révision est simplement retardée.
  * @param {Object} mot
  * @param {string} resultat
  */
@@ -344,14 +518,4 @@ function repondreRevisionMotUnique(mot, resultat) {
       afficherListeMotsAReviser(); // Retour à la liste mise à jour
     })
     .catch((erreur) => console.error('Erreur lors de l\'enregistrement de l\'évaluation', erreur));
-}
-
-/**
- * Traduit un niveau de maîtrise en libellé lisible.
- * @param {string} niveau - 'nouveau', 'en_cours' ou 'acquis'
- * @returns {string}
- */
-function libelleNiveau(niveau) {
-  const libelles = { nouveau: 'Nouveau', en_cours: 'En cours', acquis: 'Acquis' };
-  return libelles[niveau] || niveau;
 }

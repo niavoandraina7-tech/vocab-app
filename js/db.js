@@ -168,6 +168,90 @@ function obtenirToutesLesCategories() {
   return executerRequete('categories', 'readonly', (store) => store.getAll());
 }
 
+// ---- Aide à l'affichage partagée entre les écrans (Liste, Révision) ----
+
+/**
+ * Traduit un niveau de maîtrise en libellé explicite.
+ * @param {string} niveau - 'nouveau', 'en_cours' ou 'acquis'
+ * @returns {string}
+ */
+function libelleNiveau(niveau) {
+  const libelles = {
+    nouveau: 'À apprendre',
+    en_cours: 'En apprentissage',
+    acquis: 'Maîtrisé'
+  };
+  return libelles[niveau] || niveau;
+}
+
+/**
+ * Interprète une valeur de prochaine révision en objet Date locale.
+ * Accepte « AAAA-MM-JJ » (choix utilisateur, minuit local) ou une date ISO.
+ * @param {string} valeur
+ * @returns {Date|null}
+ */
+function parserDateRevision(valeur) {
+  if (!valeur) {
+    return null;
+  }
+  if (/^\d{4}-\d{2}-\d{2}$/.test(valeur)) {
+    return new Date(`${valeur}T00:00:00`);
+  }
+  return new Date(valeur);
+}
+
+/**
+ * Formate une Date en « AAAA-MM-JJ » locale (valeur d'un input[type=date]).
+ * @param {Date} date
+ * @returns {string}
+ */
+function dateEnLocalAAJJMMJJ(date) {
+  const d = new Date(date);
+  const annee = d.getFullYear();
+  const mois = String(d.getMonth() + 1).padStart(2, '0');
+  const jour = String(d.getDate()).padStart(2, '0');
+  return `${annee}-${mois}-${jour}`;
+}
+
+/**
+ * Valeur à afficher dans un champ date à partir d'une prochaine révision
+ * (« AAAA-MM-JJ » conservée telle quelle, ISO convertie en date locale).
+ * @param {string|undefined} prochaineRevision
+ * @returns {string}
+ */
+function valeurPourChampDate(prochaineRevision) {
+  if (!prochaineRevision) {
+    return '';
+  }
+  if (/^\d{4}-\d{2}-\d{2}$/.test(prochaineRevision)) {
+    return prochaineRevision;
+  }
+  return dateEnLocalAAJJMMJJ(new Date(prochaineRevision));
+}
+
+/**
+ * Retourne la valeur à pré-sélectionner dans le sélecteur de délai (1..7)
+ * si la prochaineRevision est dans les 1..7 jours à venir.
+ * Sinon retourne '' (Automatique).
+ * @param {string|undefined} prochaineRevision
+ * @returns {string}
+ */
+function valeurPourSelectDelai(prochaineRevision) {
+  if (!prochaineRevision) return '';
+  const date = parserDateRevision(prochaineRevision);
+  if (!date) return '';
+  // Calcul en jours entiers entre aujourd'hui (minuit local) et la date cible
+  const maintenant = new Date();
+  // Normaliser à la date locale (00:00:00) pour comparer en jours
+  const debutJour = new Date(maintenant.getFullYear(), maintenant.getMonth(), maintenant.getDate());
+  const diffMs = date.getTime() - debutJour.getTime();
+  const diffJours = Math.round(diffMs / (1000 * 60 * 60 * 24));
+  if (diffJours >= 1 && diffJours <= 7) {
+    return String(diffJours);
+  }
+  return '';
+}
+
 /**
  * Crée les 3 catégories par défaut si le store « categories » est vide.
  * @returns {Promise<Array<Object>>} Les catégories présentes après initialisation

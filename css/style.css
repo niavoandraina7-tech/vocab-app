@@ -396,6 +396,17 @@ legend {
   color: #188038;
 }
 
+/* Légende des niveaux (écran Liste) : explique les badges aux nouveaux utilisateurs */
+.legende-niveaux {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+  margin: 10px 0 6px;
+  font-size: 0.78rem;
+  color: var(--couleur-texte-secondaire);
+}
+
 /* ---- Gestion des catégories ---- */
 #btn-nouvelle-categorie {
   width: 100%;
@@ -864,6 +875,54 @@ button:disabled {
   color: var(--couleur-texte-secondaire);
   font-style: italic;
   margin-top: 4px;
+}
+
+/* Titres des deux sections (« À réviser » / « Prochaine révision ») */
+.titre-section-revision {
+  margin: 16px 0 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--couleur-texte-secondaire);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.titre-section-revision:first-child {
+  margin-top: 8px;
+}
+
+/* Mots déjà révisés (simplement retardés) : visibles mais atténués */
+.entree-mot-revision.programme {
+  background-color: #fafafa;
+  opacity: 0.8;
+}
+
+/* Bouton de programmation de la date de révision */
+.btn-date-revision {
+  margin-left: auto;
+  padding: 4px 10px;
+  font-size: 0.9rem;
+  background-color: #f1f3f4;
+  border: 1px solid var(--couleur-bordure);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.btn-date-revision:hover {
+  background-color: #e8eaed;
+}
+
+.editeur-date-revision {
+  flex-basis: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 6px;
+}
+
+.editeur-date-revision input[type="date"] {
+  flex: 1;
+  min-width: 0;
 }
 
 /* Bouton filtre dans révision */
