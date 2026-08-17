@@ -95,7 +95,8 @@ function seConnecter() {
       }
       // La session est posée par onAuthStateChange → migration + sync automatiques
       effacerMessageConnexion();
-      afficherEcran('parametres');
+      // Affiche la section Compte (paramètres) pour voir l'état connecté + sync
+      afficherEcran('parametres-compte');
     })
     .catch((erreur) => {
       const message = erreur && erreur.message
@@ -125,7 +126,7 @@ function sinscrire() {
       }
       if (data.session) {
         // Confirmation d'email désactivée : la session est immédiate
-        afficherEcran('parametres');
+        afficherEcran('parametres-compte');
       } else {
         // Confirmation d'email activée : prévenir l'utilisateur
         afficherMessageConnexion(
@@ -235,6 +236,7 @@ function afficherZoneCompte() {
     bouton.id = 'btn-ouvrir-connexion';
     bouton.textContent = 'Se connecter / Créer un compte';
     bouton.addEventListener('click', () => {
+      cibleRetourConnexion = 'parametres';
       effacerMessageConnexion();
       afficherEcran('connexion');
     });
@@ -290,6 +292,11 @@ let ecranConnexionBranche = false;
 // Mode courant de l'écran Connexion : 'connexion' ou 'inscription'
 let modeConnexion = 'connexion';
 
+// Écran de retour du bouton « ← Retour » de l'écran Connexion.
+// 'liste' quand l'app démarre sur la page de connexion, 'parametres' quand
+// l'écran a été ouvert depuis la section Compte de Paramètres.
+let cibleRetourConnexion = 'liste';
+
 /**
  * Bascule l'écran Connexion entre les modes « Connexion » et « Inscription »
  * (onglets visuels) : met à jour les onglets, le libellé du bouton principal
@@ -342,12 +349,13 @@ function brancherEcranConnexion() {
 
   document.getElementById('btn-retour-connexion').addEventListener('click', () => {
     effacerMessageConnexion();
-    afficherEcran('parametres');
+    afficherEcran(cibleRetourConnexion);
   });
 
+  // « Continuer sans compte » : on entre dans l'app en mode invité
   document.getElementById('btn-mode-local').addEventListener('click', () => {
     effacerMessageConnexion();
-    afficherEcran('parametres');
+    afficherEcran('liste');
   });
 
   // État initial : onglet Connexion actif
@@ -384,6 +392,9 @@ function initialiserAuth() {
         arreterSync();
       }
       afficherZoneCompte();
+      // Retour à la page de connexion (celle-ci s'affiche en premier à l'ouverture)
+      cibleRetourConnexion = 'liste';
+      afficherEcran('connexion');
       return;
     }
 
@@ -408,6 +419,14 @@ function initialiserAuth() {
         demarrerSyncPourUtilisateur();
       }
       afficherZoneCompte();
+
+      // Au démarrage : une session restaurée ouvre directement l'application
+      // (les connexions/inscriptions faites depuis le formulaire naviguent déjà
+      // vers Paramètres dans seConnecter()/sinscrire()).
+      if (evenement === 'INITIAL_SESSION') {
+        cibleRetourConnexion = 'liste';
+        afficherEcran('liste');
+      }
     }
   });
 

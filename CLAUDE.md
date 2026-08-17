@@ -23,10 +23,12 @@ node -e "require('http').createServer((q,s)=>{const f=require('fs'),p=require('p
 
 Puis ouvrir `http://127.0.0.1:8123/`.
 
+Pour l'aperçu Freebuff, un helper sans dépendance existe à la racine du workspace : `node .freebuff/serveur-static.js` lancé depuis `vocab-app/` (voir `.freebuff/run.md`).
+
 ## Structure du projet
 
 ```
-index.html            — écrans (sections .ecran) + barre de navigation
+index.html            — écrans (sections .ecran) + bouton menu ☰ + tiroir de navigation
 css/style.css         — styles (mobile-first, barre de nav en bas ; desktop : à gauche)
 js/db.js              — accès IndexedDB, helpers de dates, catégories par défaut, soft delete
 js/categories.js      — gestion des catégories (arbre, renommer, supprimer, sous-catégories)
@@ -43,6 +45,7 @@ js/vendor/supabase.min.js — SDK supabase-js vendu localement (hors-ligne)
 js/app.js             — navigation (afficherEcran), initialisation, enregistrement SW
 service-worker.js     — cache offline (cache-first, exclut supabase.co)
 supabase/schema.sql   — script SQL à exécuter dans le projet Supabase (tables + RLS)
+supabase/GUIDE-CONFIGURATION.md — guide pas à pas (création projet, clés, RLS, tests)
 manifest.json         — PWA
 icons/                — icônes PWA
 ```
@@ -57,10 +60,16 @@ Une fonction d'un fichier appelée dans un autre ne doit être exécutée qu'au 
 
 ## Navigation et écrans
 
-- `afficherEcran(nomEcran)` (app.js) bascule la classe `.active` sur `#ecran-<nom>` et sur le bouton de nav `[data-ecran]`.
+- `afficherEcran(nomEcran)` (app.js) bascule la classe `.active` sur `#ecran-<nom>` et sur le bouton de menu `[data-ecran]`.
 - Onglets : `liste`, `categories`, `ajout`, `revision` (libellé « Jeu »), `parametres`.
-- `detail` est un **sous-écran** de l'onglet Liste (un appui sur un mot ouvre sa fiche ; le bouton « Modifier » ouvre le formulaire). La barre de nav garde « Liste » surligné pour `detail` (voir `nomEcranNav` dans app.js).
+- **L'onglet Paramètres est un index de sections** : l'écran `parametres` n'affiche que la liste des sections (boutons `[data-section-parametres]` : compte, rappels, dictee, export). Un clic ouvre un sous-écran `parametres-compte` / `parametres-rappels` / `parametres-dictee` / `parametres-export` (sections `.ecran` à part, avec « ← Paramètres » = `[data-retour-parametres]`). Le menu garde « Paramètres » surligné pour ces sous-écrans (`SOUS_ECRANS_PARAMETRES` dans app.js). Les initialisations (`afficherZoneCompte`, `initialiserRappelsParametres`, `initialiserVocalParametres`) s'exécutent à l'ouverture du sous-écran correspondant.
+- **Il n'y a plus de barre d'onglets en bas** : la navigation passe par un **bouton hamburger `☰`** (`#btn-menu`, fixe en haut à gauche) qui ouvre un **tiroir latéral** (`#barre-navigation.menu-tiroir`, glisse depuis la gauche avec un voile assombri `#voile-menu`). Fonctions dans app.js : `ouvrirMenu()` / `fermerMenu()` / `basculerMenu()`.
+- Le menu se ferme automatiquement après un clic sur une entrée, au clic sur le voile, à la touche Échap, ou via le bouton ✕ du tiroir.
+- `#app` a un padding haut (~62 px) pour laisser la place au bouton menu fixe.
+- `detail` est un **sous-écran** de l'onglet Liste (un appui sur un mot ouvre sa fiche ; le bouton « Modifier » ouvre le formulaire). Le menu garde « Liste » surligné pour `detail` (voir `nomEcranNav` dans app.js).
 - Quitter l'écran `revision` appelle `arreterQuiz()` (arrêt du minuteur du quiz).
+- **`connexion` est un écran dédié, sans navigation** : `afficherEcran` pose la classe `.sans-navigation` sur `<body>` quand `nomEcran === 'connexion'` ; le CSS masque le hamburger et le tiroir, et réduit les paddings de `#app`. Le menu est aussi fermé à l'entrée sur cet écran. La navigation réapparaît dès qu'on quitte l'écran.
+- **La page de connexion s'affiche en premier à l'ouverture** : dans app.js, si Supabase est configuré et qu'aucune session n'est restaurée au chargement, l'app démarre sur `connexion`. Une session restaurée (`INITIAL_SESSION`) ouvre directement la Liste ; « Continuer sans compte » entre en mode invité (Liste) ; la déconnexion (`SIGNED_OUT`) ramène sur la page de connexion. « ← Retour » repart vers Paramètres si l'écran a été ouvert depuis la section Compte, sinon vers la Liste (`cibleRetourConnexion` dans auth.js).
 
 ## Modèle de données (IndexedDB)
 
@@ -108,6 +117,23 @@ Helpers de dates partagés (db.js) : `parserDateRevision` (accepte les deux form
 - Garde anti double-clic : `quiz.repondu` (réinitialisé à chaque question dans `afficherQuestionQuiz`).
 - `arreterQuiz()` : arrête le minuteur (appelé à la navigation ou au retour à l'accueil).
 
+## Authentification (auth.js)
+
+- Écran `connexion` affiché **au démarrage de l'app** (si Supabase est configuré et sans session restaurée) et accessible depuis **Paramètres → Compte → « Se connecter / Créer un compte »**. Le mode invité reste possible via « Continuer sans compte » : ce n'est pas un mur de connexion bloquant.
+- **Design** : carte centrée (`connexion-carte`, max 440 px) avec en-tête logo 📖 + titre, champs pleine largeur, bouton principal pleine largeur, lien « Mot de passe oublié ? » et bouton discret « Continuer sans compte ».
+- **Onglets « Connexion / Inscription »** (`btn-onglet-connexion`, `btn-onglet-inscription`, `role=tablist`) : `definirModeConnexion('connexion'|'inscription')` bascule le libellé du bouton submit (« Se connecter » / « Créer mon compte »), l'`autocomplete` du mot de passe (`current-password`/`new-password`) et la visibilité du lien « Mot de passe oublié ?`. La soumission du formulaire route vers `seConnecter()` ou `sinscrire()` selon le mode actif (`modeConnexion`).
+- **Session** : `onAuthStateChange` (SIGNED_IN / INITIAL_SESSION / SIGNED_OUT) ; `initialiserAuth()` peut être appelé plusieurs fois sans doublon d'écouteurs (garde `ecranConnexionBranche`). `obtenirClientSupabase()` expose le client à sync.js.
+- **Inscription** : si la confirmation d'email est requise dans le projet (`mailer_autoconfirm: false`), le compte est créé mais pas de session → message « Un email de confirmation vous a été envoyé », l'utilisateur reste sur l'écran. Les erreurs sont traduites en français (`erreurTraduite`).
+- **Erreurs réseau** : se connecter nécessite internet (l'app hors-ligne, elle, n'en a pas besoin) — message clair dans ce cas.
+
+## Déploiement Vercel
+
+- L'app est **100 % statique** (pas de build) : importer le dépôt sur Vercel avec **Root Directory = `vocab-app`**, framework « Other ».
+- ⚠️ **`js/config.js` est gitignoré → il n'est PAS déployé par défaut** : en ligne, `/js/config.js` renvoie 404 et l'app affiche « Supabase n'est pas configuré » (pas d'auth/sync). Pour activer Supabase en ligne : retirer `js/config.js` du `.gitignore` et le committer — c'est sûr car la clé **anon** est publique par conception (seule la clé `service_role` doit rester secrète, jamais côté client).
+- **Dans Supabase** (Authentication → URL Configuration) : Site URL = l'URL Vercel (`https://…vercel.app`) et Redirect URLs = `<URL>/**` — indispensable pour les liens de confirmation d'email et de réinitialisation.
+- **Avant chaque push** : incrémenter `NOM_CACHE` dans `service-worker.js` (actuellement **v21**) pour que les utilisateurs reçoivent la nouvelle version (Vercel redéploie automatiquement au push si l'auto-deploy est actif).
+- Guide complet : `supabase/GUIDE-CONFIGURATION.md`.
+
 ## Synchronisation Supabase (V3)
 
 - **Principe local-first** : IndexedDB reste maître ; Supabase = sync/backup en arrière-plan. Aucun écran n'est imposé, l'app marche sans compte (mode invité) et sans config (`config.js` ignoré par git, placeholders).
@@ -124,7 +150,7 @@ Helpers de dates partagés (db.js) : `parserDateRevision` (accepte les deux form
 
 - Stratégie cache-first ; navigation servie depuis `index.html` en cache.
 - **Les requêtes vers `*.supabase.co` ne sont JAMAIS interceptées** (ni cache, ni service depuis le cache) — sinon la PWA servirait des données/sessions périmées.
-- **Quand on modifie un fichier de l'app, incrémenter `NOM_CACHE`** (`vocab-cache-v8` → v9, …) pour forcer le re-téléchargement chez les utilisateurs. Sans ça, la PWA continue de servir l'ancienne version.
+- **Quand on modifie un fichier de l'app, incrémenter `NOM_CACHE`** (actuellement `vocab-cache-v21`) pour forcer le re-téléchargement chez les utilisateurs. Sans ça, la PWA continue de servir l'ancienne version.
 
 ## Conventions de code
 
@@ -139,6 +165,7 @@ Helpers de dates partagés (db.js) : `parserDateRevision` (accepte les deux form
 - **Aucun framework de test** : vérifier la syntaxe avec `node --check js/*.js`.
 - Tests manuels dans un navigateur via un serveur statique (voir « Lancer l'application »).
 - Après un changement, tester au minimum : chargement sans erreur console, ajout/édition/suppression d'un mot, navigation entre onglets, quiz complet, ajout de catégorie.
+- Pour l'auth : vérifier que la barre de navigation disparaît sur l'écran `connexion` et réapparaît au retour, la bascule Connexion/Inscription, les messages d'erreur, et le flux complet (connexion → migration → « ☁️ À jour » → déconnexion).
 - Données de test : supprimer la base avec les devtools (Application → IndexedDB → `vocabDB`) pour repartir de zéro (les catégories par défaut sont recréées à l'ouverture).
 
 ## Pièges connus
@@ -152,3 +179,6 @@ Helpers de dates partagés (db.js) : `parserDateRevision` (accepte les deux form
 - **Ne jamais contourner `provenance: 'sync'`** pour une écriture issue de la synchronisation : `modifierMot`/`modifierCategorie` sans provenance repassent l'enregistrement en `en_attente` et redéclenchent une sync (boucle).
 - Un enregistrement supprimé (`supprime: true`) reste en IndexedDB (tombstone) tant qu'il peut se propager — c'est voulu : sans lui, la suppression ne pourrait pas atteindre les autres appareils.
 - Multi-comptes sur un même appareil : les données d'un compte restent associées à leur `userId` après déconnexion et ne sont PAS poussées vers un autre compte (pas de fuite de données, mais l'utilisateur doit savoir que chaque compte garde ses données).
+- **L'aperçu local peut rester sur l'ancienne version** : le service worker sert la page en cache (cache-first). Après une modification, purger les caches et désenregistrer le SW depuis la console (`caches.keys()`, `navigator.serviceWorker.getRegistrations()`) puis recharger — ou simplement incrémenter `NOM_CACHE`.
+- **Tester le flux d'auth sans compte réel** : `clientSupabase` et `utilisateurCourant` sont des bindings globaux réassignables depuis la console — on peut injecter un faux client (méthodes `auth.getSession/onAuthStateChange/signInWithPassword/signUp/signOut` + `from().upsert()/select()`) et rejouer `initialiserAuth()` pour passer tout le flux (migration, push/pull, UI) sans réseau. Ne pas oublier de nettoyer (`localStorage`, `sync_migre_*`, base) ensuite.
+- **Le projet Supabase de production exige la confirmation d'email** (`mailer_autoconfirm: false`) : une inscription crée un compte non confirmé sans session — tester la connexion nécessite de cliquer le lien de l'email (Site URL doit pointer vers l'app).

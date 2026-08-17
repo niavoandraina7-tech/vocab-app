@@ -33,7 +33,8 @@ body {
 #app {
   max-width: 600px;
   margin: 0 auto;
-  padding: 16px 16px 96px; /* padding bas pour laisser la place à la barre de navigation */
+  /* padding haut pour laisser la place au bouton menu (hamburger) fixe */
+  padding: 62px 16px 24px;
 }
 
 /* Écrans : masqués par défaut, seul celui avec .active est visible */
@@ -81,28 +82,92 @@ button:active {
   margin-bottom: 12px;
 }
 
-/* ---- Barre de navigation (mobile : en bas) ---- */
-#barre-navigation {
+/* ---- Bouton menu (hamburger) ---- */
+.btn-menu {
   position: fixed;
+  top: 10px;
+  left: 10px;
+  z-index: 30;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background-color: #ffffff;
+  color: var(--couleur-texte);
+  border: 1px solid var(--couleur-bordure);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+/* ---- Voile (fond assombri quand le menu est ouvert) ---- */
+.voile-menu {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.4);
+  z-index: 40;
+}
+
+/* ---- Menu de navigation (tiroir latéral) ---- */
+.menu-tiroir {
+  position: fixed;
+  top: 0;
   bottom: 0;
   left: 0;
-  right: 0;
-  display: flex;
+  width: 260px;
+  max-width: 80vw;
   background-color: #ffffff;
-  border-top: 1px solid var(--couleur-bordure);
-  padding: 6px 4px;
-  z-index: 10;
+  border-right: 1px solid var(--couleur-bordure);
+  box-shadow: 2px 0 12px rgba(0, 0, 0, 0.15);
+  padding: 12px;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transform: translateX(-105%);
+  visibility: hidden;
+  transition: transform 0.22s ease, visibility 0s linear 0.22s;
+}
+
+.menu-tiroir.ouvert {
+  transform: translateX(0);
+  visibility: visible;
+  transition: transform 0.22s ease;
+}
+
+.menu-tiroir-entete {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 4px 12px;
+  border-bottom: 1px solid var(--couleur-bordure);
+  margin-bottom: 8px;
+}
+
+.menu-tiroir-titre {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.btn-fermer-menu {
+  min-height: 40px;
+  min-width: 40px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background-color: #f1f3f4;
+  color: var(--couleur-texte);
 }
 
 .nav-bouton {
-  flex: 1;
   min-height: 48px;
   background: none;
   color: var(--couleur-texte-secondaire);
-  font-size: 0.85rem;
+  font-size: 0.95rem;
   font-weight: 500;
   border-radius: 8px;
-  padding: 8px 4px;
+  padding: 10px 12px;
+  text-align: left;
 }
 
 .nav-bouton.active {
@@ -1034,13 +1099,16 @@ button:disabled {
 }
 
 /* ---- Écran d'authentification : masquage de la navigation ---- */
-/* Pendant la connexion/inscription, la barre de navigation est masquée et le
-   contenu reprend tout l'espace (le padding bas prévu pour la barre disparaît). */
+/* Pendant la connexion/inscription, le bouton menu et le tiroir sont masqués
+   et le contenu reprend tout l'espace (les paddings prévus pour la navigation
+   disparaissent). */
+.sans-navigation .btn-menu,
 .sans-navigation #barre-navigation {
   display: none;
 }
 
 .sans-navigation #app {
+  padding-top: 16px;
   padding-bottom: 16px;
 }
 
@@ -1156,25 +1224,64 @@ button:disabled {
   border-color: var(--couleur-primaire);
 }
 
-/* ---- Desktop : barre de navigation sur le côté ---- */
-@media (min-width: 768px) {
-  #barre-navigation {
-    position: fixed;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    right: auto;
-    width: 200px;
-    flex-direction: column;
-    gap: 6px;
-    border-top: none;
-    border-right: 1px solid var(--couleur-bordure);
-    padding: 16px 8px;
-  }
+/* ---- Paramètres : index des sections ---- */
+.liste-sections-parametres {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
 
+.section-parametres-bouton {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  min-height: 64px;
+  padding: 12px 14px;
+  background-color: #ffffff;
+  border: 1px solid var(--couleur-bordure);
+  border-radius: 12px;
+  color: var(--couleur-texte);
+  text-align: left;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.section-parametres-bouton:active {
+  opacity: 0.85;
+}
+
+.section-icone {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.section-texte {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.section-titre {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.section-description {
+  font-size: 0.8rem;
+  color: var(--couleur-texte-secondaire);
+}
+
+.section-fleche {
+  font-size: 1.4rem;
+  color: var(--couleur-texte-secondaire);
+  flex-shrink: 0;
+}
+
+/* ---- Desktop : le tiroir et le hamburger fonctionnent pareil, contenu élargi ---- */
+@media (min-width: 768px) {
   #app {
-    margin-left: 200px;
-    padding-bottom: 16px;
     max-width: 800px;
   }
 }

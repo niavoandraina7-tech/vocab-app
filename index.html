@@ -153,62 +153,128 @@
       </div>
     </section>
 
-    <!-- Écran : Paramètres -->
+    <!-- Écran : Paramètres (index des sections) -->
     <section id="ecran-parametres" class="ecran">
       <header class="entete-ecran">
         <h1>Paramètres</h1>
       </header>
-      <div id="contenu-parametres">
-        <!-- Section Compte / Synchronisation -->
-        <h2 id="section-compte">Compte & Synchronisation</h2>
-        <div id="zone-compte">
-          <!-- Rempli dynamiquement par auth.js : soit formulaire connexion, soit infos utilisateur + sync -->
-        </div>
-
-        <h2>Rappels de révision</h2>
-        <div class="reglage-ligne">
-          <div>
-            <strong>Activer les rappels</strong>
-            <p class="conseil">Être prévenu quand des mots attendent une révision.</p>
-          </div>
-          <label class="interrupteur" aria-label="Activer ou désactiver les rappels de révision">
-            <input type="checkbox" id="reglage-rappels-actives">
-            <span class="curseur"></span>
-          </label>
-        </div>
-        <label for="reglage-seuil-rappels">Notifier si un mot attend depuis plus de</label>
-        <select id="reglage-seuil-rappels" aria-label="Seuil de rappel en jours">
-          <option value="1">1 jour</option>
-          <option value="2">2 jours</option>
-          <option value="3">3 jours</option>
-          <option value="5">5 jours</option>
-          <option value="7">7 jours</option>
-        </select>
-        <p class="info-rappels" id="info-permission-rappels"></p>
-        <p class="conseil">Limite technique : les notifications ne se déclenchent que lorsque l'app est ouverte ou en arrière-plan récent — jamais de façon garantie quand l'app est totalement fermée, car l'application fonctionne sans serveur. Le bandeau visuel dans l'app, lui, fonctionne toujours, même hors ligne.</p>
-
-        <h2>Dictée vocale</h2>
-        <div id="section-dictee-vocale">
-          <label for="reglage-langue-dictee">Langue de dictée</label>
-          <select id="reglage-langue-dictee" aria-label="Langue de dictée vocale">
-            <option value="fr-FR">Français (fr-FR)</option>
-            <option value="en-US">Anglais (en-US)</option>
-          </select>
-          <p class="conseil">La dictée vocale utilise le micro du navigateur (Web Speech API) et nécessite généralement une connexion internet. Elle peut ne pas fonctionner hors ligne ou sur certains navigateurs (ex : Firefox) ; le formulaire reste alors utilisable au clavier.</p>
-        </div>
-
-        <h2>Export / Import</h2>
-        <p class="conseil">Sauvegardez vos données dans un fichier JSON ou restaurez-les depuis un fichier.</p>
-        <button id="btn-exporter" type="button">Exporter mes données</button>
-        <button id="btn-importer" type="button">Importer un fichier</button>
-        <input type="file" id="champ-fichier-import" accept="application/json,.json" hidden>
+      <div id="liste-sections-parametres" class="liste-sections-parametres">
+        <button type="button" class="section-parametres-bouton" data-section-parametres="compte">
+          <span class="section-icone" aria-hidden="true">👤</span>
+          <span class="section-texte">
+            <span class="section-titre">Compte & Synchronisation</span>
+            <span class="section-description">Connexion, déconnexion, état de la synchronisation</span>
+          </span>
+          <span class="section-fleche" aria-hidden="true">›</span>
+        </button>
+        <button type="button" class="section-parametres-bouton" data-section-parametres="rappels">
+          <span class="section-icone" aria-hidden="true">🔔</span>
+          <span class="section-texte">
+            <span class="section-titre">Rappels de révision</span>
+            <span class="section-description">Bandeau et notifications navigateur</span>
+          </span>
+          <span class="section-fleche" aria-hidden="true">›</span>
+        </button>
+        <button type="button" class="section-parametres-bouton" data-section-parametres="dictee">
+          <span class="section-icone" aria-hidden="true">🎤</span>
+          <span class="section-texte">
+            <span class="section-titre">Dictée vocale</span>
+            <span class="section-description">Langue utilisée pour la dictée</span>
+          </span>
+          <span class="section-fleche" aria-hidden="true">›</span>
+        </button>
+        <button type="button" class="section-parametres-bouton" data-section-parametres="export">
+          <span class="section-icone" aria-hidden="true">📤</span>
+          <span class="section-texte">
+            <span class="section-titre">Export / Import</span>
+            <span class="section-description">Sauvegarder ou restaurer vos données</span>
+          </span>
+          <span class="section-fleche" aria-hidden="true">›</span>
+        </button>
       </div>
+    </section>
+
+    <!-- Sous-écran : Compte & Synchronisation -->
+    <section id="ecran-parametres-compte" class="ecran">
+      <header class="entete-ecran">
+        <button type="button" class="btn-retour" data-retour-parametres>← Paramètres</button>
+        <h1>Compte & Synchronisation</h1>
+      </header>
+      <div id="zone-compte">
+        <!-- Rempli dynamiquement par auth.js : soit formulaire connexion, soit infos utilisateur + sync -->
+      </div>
+    </section>
+
+    <!-- Sous-écran : Rappels de révision -->
+    <section id="ecran-parametres-rappels" class="ecran">
+      <header class="entete-ecran">
+        <button type="button" class="btn-retour" data-retour-parametres>← Paramètres</button>
+        <h1>Rappels de révision</h1>
+      </header>
+      <div class="reglage-ligne">
+        <div>
+          <strong>Activer les rappels</strong>
+          <p class="conseil">Être prévenu quand des mots attendent une révision.</p>
+        </div>
+        <label class="interrupteur" aria-label="Activer ou désactiver les rappels de révision">
+          <input type="checkbox" id="reglage-rappels-actives">
+          <span class="curseur"></span>
+        </label>
+      </div>
+      <label for="reglage-seuil-rappels">Notifier si un mot attend depuis plus de</label>
+      <select id="reglage-seuil-rappels" aria-label="Seuil de rappel en jours">
+        <option value="1">1 jour</option>
+        <option value="2">2 jours</option>
+        <option value="3">3 jours</option>
+        <option value="5">5 jours</option>
+        <option value="7">7 jours</option>
+      </select>
+      <p class="info-rappels" id="info-permission-rappels"></p>
+      <p class="conseil">Limite technique : les notifications ne se déclenchent que lorsque l'app est ouverte ou en arrière-plan récent — jamais de façon garantie quand l'app est totalement fermée, car l'application fonctionne sans serveur. Le bandeau visuel dans l'app, lui, fonctionne toujours, même hors ligne.</p>
+    </section>
+
+    <!-- Sous-écran : Dictée vocale -->
+    <section id="ecran-parametres-dictee" class="ecran">
+      <header class="entete-ecran">
+        <button type="button" class="btn-retour" data-retour-parametres>← Paramètres</button>
+        <h1>Dictée vocale</h1>
+      </header>
+      <div id="section-dictee-vocale">
+        <label for="reglage-langue-dictee">Langue de dictée</label>
+        <select id="reglage-langue-dictee" aria-label="Langue de dictée vocale">
+          <option value="fr-FR">Français (fr-FR)</option>
+          <option value="en-US">Anglais (en-US)</option>
+        </select>
+        <p class="conseil">La dictée vocale utilise le micro du navigateur (Web Speech API) et nécessite généralement une connexion internet. Elle peut ne pas fonctionner hors ligne ou sur certains navigateurs (ex : Firefox) ; le formulaire reste alors utilisable au clavier.</p>
+      </div>
+    </section>
+
+    <!-- Sous-écran : Export / Import -->
+    <section id="ecran-parametres-export" class="ecran">
+      <header class="entete-ecran">
+        <button type="button" class="btn-retour" data-retour-parametres>← Paramètres</button>
+        <h1>Export / Import</h1>
+      </header>
+      <p class="conseil">Sauvegardez vos données dans un fichier JSON ou restaurez-les depuis un fichier.</p>
+      <button id="btn-exporter" type="button">Exporter mes données</button>
+      <button id="btn-importer" type="button">Importer un fichier</button>
+      <input type="file" id="champ-fichier-import" accept="application/json,.json" hidden>
     </section>
 
   </div>
 
-  <!-- Barre de navigation -->
-  <nav id="barre-navigation">
+  <!-- Bouton menu (hamburger) : ouvre la navigation -->
+  <button id="btn-menu" class="btn-menu" type="button" aria-label="Ouvrir le menu de navigation" aria-expanded="false" aria-controls="barre-navigation">☰</button>
+
+  <!-- Voile : clic en dehors du menu pour le fermer -->
+  <div id="voile-menu" class="voile-menu" hidden></div>
+
+  <!-- Menu de navigation (tiroir latéral, ouvert par le hamburger) -->
+  <nav id="barre-navigation" class="menu-tiroir" aria-label="Navigation principale" aria-hidden="true">
+    <div class="menu-tiroir-entete">
+      <span class="menu-tiroir-titre">📖 Mon Vocabulaire</span>
+      <button id="btn-fermer-menu" class="btn-fermer-menu" type="button" aria-label="Fermer le menu">✕</button>
+    </div>
     <button class="nav-bouton active" data-ecran="liste" type="button">Liste</button>
     <button class="nav-bouton" data-ecran="categories" type="button">Catégories</button>
     <button class="nav-bouton" data-ecran="ajout" type="button">Ajouter</button>
