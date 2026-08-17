@@ -1,13 +1,13 @@
-// quiz.js — quiz chronométré (mode « jeu » de l'onglet Révision)
+// quiz.js — quiz chronométré (mode « jeu » de l'onglet Jeu)
 //
-// Déroulement : configuration (nombre de mots) → pour chaque mot : affichage
-// du mot seul + compte à rebours 30 s → révélation de la définition →
-// « Je savais » / « Je ne savais pas » → score final.
+// Déroulement : l'onglet Jeu affiche un accueil avec un bouton « Lancer le
+// quiz » → le quiz démarre directement sur tous les mots à réviser : pour
+// chaque mot, affichage seul + compte à rebours 30 s → révélation de la
+// définition → « Je savais » / « Je ne savais pas » → score final.
 // Les réponses passent par la MÊME fonction enregistrerEvaluation que la
 // session classique (V1) : les deux systèmes partagent les mêmes données.
 
 const DUREE_QUESTION_SECONDES = 30;
-const CHOIX_NOMBRES = [5, 10, 20];
 
 // État de la session de quiz en cours (null = aucun quiz actif)
 let sessionQuiz = null;
@@ -25,9 +25,11 @@ function arreterQuiz() {
 }
 
 /**
- * Écran de configuration : choix du nombre de mots parmi ceux à réviser.
+ * Accueil de l'onglet « Jeu » : un bouton « Lancer le quiz » démarre
+ * directement le quiz sur tous les mots à réviser, sans choix de nombre.
+ * La révision classique reste accessible en secondaire.
  */
-function afficherConfigQuiz() {
+function afficherAccueilJeu() {
   arreterQuiz();
   sessionQuiz = null;
 
@@ -44,75 +46,71 @@ function afficherConfigQuiz() {
 
   Promise.all([obtenirTousLesMots(), obtenirToutesLesCategories()])
     .then(([mots, categories]) => {
-      // Mêmes mots que la liste « à réviser » de la V1, mélangés pour la variété
       const motsAReviser = selectionnerMotsAReviser(mots, '', categories);
-      const motsMelanges = [...motsAReviser].sort(() => Math.random() - 0.5);
 
       const info = document.createElement('p');
       info.className = 'quiz-info';
-      info.textContent = `${motsAReviser.length} mot(s) à réviser disponible(s).`;
+      info.textContent = motsAReviser.length === 0
+        ? 'Aucun mot à réviser pour le moment : ajoutez des mots ou revenez après une révision pour lancer un quiz.'
+        : `${motsAReviser.length} mot(s) à réviser disponible(s).`;
 
-      const blocChoix = document.createElement('div');
-      blocChoix.className = 'quiz-choix-nombre';
+      const btnQuiz = document.createElement('button');
+      btnQuiz.type = 'button';
+      btnQuiz.id = 'btn-lancer-quiz';
+      btnQuiz.className = 'btn-quiz-lancer';
+      btnQuiz.textContent = '🎮 Lancer le quiz';
+      btnQuiz.disabled = motsAReviser.length === 0;
+      btnQuiz.addEventListener('click', lancerQuiz);
 
-      const label = document.createElement('p');
-      label.textContent = 'Nombre de mots :';
-      blocChoix.appendChild(label);
+      // Accès secondaire à la révision classique (liste + programmation des dates)
+      const btnRevisionClassique = document.createElement('button');
+      btnRevisionClassique.type = 'button';
+      btnRevisionClassique.className = 'btn-retour';
+      btnRevisionClassique.textContent = '📋 Révision classique';
+      btnRevisionClassique.title = 'Voir la liste des mots à réviser et programmer les dates de révision';
+      btnRevisionClassique.addEventListener('click', afficherListeMotsAReviser);
 
-      CHOIX_NOMBRES.forEach((nombre) => {
-        const bouton = document.createElement('button');
-        bouton.type = 'button';
-        bouton.className = 'btn-quiz-choix';
-        bouton.textContent = String(nombre);
-        bouton.addEventListener('click', () => demarrerQuiz(motsMelanges, nombre));
-        blocChoix.appendChild(bouton);
-      });
-
-      const boutonTous = document.createElement('button');
-      boutonTous.type = 'button';
-      boutonTous.className = 'btn-quiz-choix btn-quiz-tous';
-      boutonTous.textContent = 'Tous les mots à réviser';
-      boutonTous.addEventListener('click', () => demarrerQuiz(motsMelanges, motsMelanges.length));
-      blocChoix.appendChild(boutonTous);
-
-      if (motsAReviser.length === 0) {
-        const aucun = document.createElement('p');
-        aucun.className = 'quiz-info quiz-info-vide';
-        aucun.textContent = 'Aucun mot à réviser pour le moment : ajoutez des mots ou revenez après une révision pour lancer un quiz.';
-        blocChoix.appendChild(aucun);
-      }
-
-      const btnRetour = document.createElement('button');
-      btnRetour.type = 'button';
-      btnRetour.className = 'btn-retour';
-      btnRetour.textContent = '← Retour à Révision';
-      btnRetour.addEventListener('click', afficherListeMotsAReviser);
-
-      conteneur.append(titre, intro, info, blocChoix, btnRetour);
+      conteneur.append(titre, intro, info, btnQuiz, btnRevisionClassique);
     })
-    .catch((erreur) => console.error('Erreur lors de la configuration du quiz', erreur));
+    .catch((erreur) => console.error('Erreur lors du chargement de l\'accueil du jeu', erreur));
 }
 
 /**
- * Démarre la session de quiz sur les mots donnés.
- * Si moins de mots sont disponibles que demandés, on prend tous les mots
- * disponibles et on le signale (note visible sur la première question).
- * @param {Array<Object>} motsDisponibles - Mots à réviser (mélangés)
- * @param {number} nombreDemande - Nombre de mots choisi par l'utilisateur
+ * Lance directement le quiz sur tous les mots à réviser (mélangés).
+ * Ne fait rien s'il n'y a aucun mot à réviser (le bouton est alors désactivé).
  */
-function demarrerQuiz(motsDisponibles, nombreDemande) {
-  if (motsDisponibles.length === 0) {
+function lancerQuiz() {
+  arreterQuiz();
+  sessionQuiz = null;
+
+  Promise.all([obtenirTousLesMots(), obtenirToutesLesCategories()])
+    .then(([mots, categories]) => {
+      const motsAReviser = selectionnerMotsAReviser(mots, '', categories);
+      if (motsAReviser.length === 0) {
+        afficherAccueilJeu();
+        return;
+      }
+      const motsMelanges = [...motsAReviser].sort(() => Math.random() - 0.5);
+      demarrerQuiz(motsMelanges);
+    })
+    .catch((erreur) => console.error('Erreur lors du lancement du quiz', erreur));
+}
+
+/**
+ * Démarre la session de quiz sur tous les mots donnés (déjà mélangés).
+ * @param {Array<Object>} mots - Mots à réviser (mélangés)
+ */
+function demarrerQuiz(mots) {
+  if (mots.length === 0) {
     return;
   }
-  const nombre = Math.min(nombreDemande, motsDisponibles.length);
   sessionQuiz = {
-    mots: motsDisponibles.slice(0, nombre),
+    mots,
     index: 0,
     score: 0,
     minuteur: null,
     secondesRestantes: DUREE_QUESTION_SECONDES,
-    revele: false,
-    reduit: nombre < nombreDemande
+    revele: false
   };
   afficherQuestionQuiz();
 }
@@ -128,17 +126,11 @@ function afficherQuestionQuiz() {
   const mot = quiz.mots[quiz.index];
   const conteneur = document.getElementById('contenu-revision');
   conteneur.innerHTML = '';
+  quiz.repondu = false; // autorise à nouveau une réponse pour cette question
 
   const progres = document.createElement('p');
   progres.className = 'quiz-progres';
   progres.textContent = `Question ${quiz.index + 1} / ${quiz.mots.length}`;
-
-  if (quiz.index === 0 && quiz.reduit) {
-    const note = document.createElement('p');
-    note.className = 'quiz-note-reduit';
-    note.textContent = `Seulement ${quiz.mots.length} mot(s) disponible(s) : le quiz portera sur ${quiz.mots.length} mot(s).`;
-    conteneur.appendChild(note);
-  }
 
   const motEl = document.createElement('p');
   motEl.className = 'quiz-mot';
@@ -241,9 +233,11 @@ function revelerDefinitionQuiz() {
  */
 function repondreQuiz(su) {
   const quiz = sessionQuiz;
-  if (!quiz) {
+  // Garde contre un double-clic rapide : on ne traite qu'une seule réponse par question
+  if (!quiz || quiz.repondu) {
     return;
   }
+  quiz.repondu = true;
   const mot = quiz.mots[quiz.index];
   if (su) {
     quiz.score++;
@@ -299,18 +293,18 @@ function afficherResultatQuiz() {
 
   const btnRejouer = document.createElement('button');
   btnRejouer.type = 'button';
-  btnRejouer.textContent = 'Rejouer un quiz';
-  btnRejouer.addEventListener('click', afficherConfigQuiz);
+  btnRejouer.textContent = '🎮 Rejouer un quiz';
+  btnRejouer.addEventListener('click', lancerQuiz);
 
-  const btnRetour = document.createElement('button');
-  btnRetour.type = 'button';
-  btnRetour.className = 'btn-secondaire';
-  btnRetour.textContent = 'Retour à Révision';
-  btnRetour.addEventListener('click', () => {
+  const btnRevisionClassique = document.createElement('button');
+  btnRevisionClassique.type = 'button';
+  btnRevisionClassique.className = 'btn-secondaire';
+  btnRevisionClassique.textContent = '📋 Révision classique';
+  btnRevisionClassique.addEventListener('click', () => {
     sessionQuiz = null;
     afficherListeMotsAReviser();
   });
 
-  actions.append(btnRejouer, btnRetour);
+  actions.append(btnRejouer, btnRevisionClassique);
   conteneur.append(titre, scoreEl, messageEl, actions);
 }

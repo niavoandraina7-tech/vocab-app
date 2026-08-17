@@ -102,17 +102,17 @@ function enregistrerEvaluation(mot, resultat) {
 }
 
 /**
- * Point d'entrée principal : affiche l'écran Révision (accueil, session ou fin).
- * C'est l'écran par défaut de l'onglet Révision.
+ * Point d'entrée principal : l'onglet « Jeu » affiche l'accueil du quiz
+ * (bouton « Lancer le quiz »), pas le quiz directement.
  */
 function afficherEcranRevision() {
-  // Si un mot est en cours de révision, on affiche sa session
+  // Si un mot est en cours de révision individuelle, on reprend sa session
   if (motEnRevision) {
     afficherSessionRevisionMot(motEnRevision);
     return;
   }
-  // Sinon, on affiche la liste (accueil)
-  afficherListeMotsAReviser();
+  // Sinon, on affiche l'accueil du jeu (bouton de lancement du quiz)
+  afficherAccueilJeu();
 }
 
 /**
@@ -136,6 +136,13 @@ function afficherListeMotsAReviser() {
 
       conteneur.innerHTML = '';
 
+      // Retour vers l'onglet Jeu (accueil du quiz)
+      const btnRetour = document.createElement('button');
+      btnRetour.type = 'button';
+      btnRetour.className = 'btn-retour';
+      btnRetour.textContent = '← Retour au jeu';
+      btnRetour.addEventListener('click', afficherAccueilJeu);
+
       // Filtre par catégorie (arbre complet, comme l'écran Liste)
       const select = document.createElement('select');
       select.id = 'filtre-categorie-revision';
@@ -158,14 +165,6 @@ function afficherListeMotsAReviser() {
         ? 'Aucun mot à réviser aujourd\'hui, bien joué !'
         : `${motsAReviser.length} mot(s) à réviser aujourd'hui.`;
 
-      // Bouton quiz : accès au mode « jeu » (V2), à côté de la révision classique
-      const btnQuiz = document.createElement('button');
-      btnQuiz.type = 'button';
-      btnQuiz.id = 'btn-lancer-quiz';
-      btnQuiz.className = 'btn-quiz-lancer';
-      btnQuiz.textContent = '🎮 Lancer un quiz';
-      btnQuiz.addEventListener('click', afficherConfigQuiz);
-
       const label = document.createElement('label');
       label.htmlFor = 'filtre-categorie-revision';
       label.textContent = 'Filtrer par catégorie (optionnel)';
@@ -176,7 +175,7 @@ function afficherListeMotsAReviser() {
       listeConteneur.className = 'liste-mots-revision';
       rendreListesRevision(listeConteneur, mots, categories, filtreInitial);
 
-      conteneur.append(compteur, btnQuiz, label, select, listeConteneur);
+      conteneur.append(btnRetour, compteur, label, select, listeConteneur);
     })
     .catch((erreur) => console.error('Erreur lors du chargement de l\'écran de révision', erreur));
 }

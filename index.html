@@ -21,10 +21,6 @@
         <span class="bandeau-fleche" aria-hidden="true">→</span>
       </button>
       <input type="search" id="champ-recherche" placeholder="Rechercher un mot..." autocomplete="off">
-      <select id="filtre-categorie" aria-label="Filtrer par catégorie">
-        <option value="">Toutes les catégories</option>
-      </select>
-      <button id="btn-gestion-categories" class="btn-secondaire" type="button">Gérer les catégories</button>
       <div class="legende-niveaux" aria-label="Signification des niveaux de maîtrise">
         <span class="badge badge-nouveau">À apprendre</span>
         <span>jamais révisé</span>
@@ -90,21 +86,32 @@
       </form>
     </section>
 
+    <!-- Écran : Détail d'un mot -->
+    <section id="ecran-detail" class="ecran">
+      <header class="entete-ecran">
+        <button id="btn-retour-detail" class="btn-retour" type="button">← Retour à la liste</button>
+        <h1 id="titre-detail"></h1>
+      </header>
+      <div id="contenu-detail" class="contenu-detail"></div>
+      <div class="actions-detail">
+        <button id="btn-modifier-mot" class="btn-secondaire" type="button">Modifier</button>
+      </div>
+    </section>
+
     <!-- Écran : Gestion des catégories -->
     <section id="ecran-categories" class="ecran">
       <header class="entete-ecran">
         <h1>Catégories</h1>
       </header>
-      <button id="btn-retour-liste" class="btn-retour" type="button">← Retour à la liste</button>
       <button id="btn-nouvelle-categorie" class="btn-secondaire" type="button">+ Nouvelle catégorie principale</button>
       <p class="conseil">Astuce : limitez la profondeur à 2-3 niveaux pour rester lisible.</p>
       <div id="liste-categories"></div>
     </section>
 
-    <!-- Écran : Révision -->
+    <!-- Écran : Jeu (quiz) -->
     <section id="ecran-revision" class="ecran">
       <header class="entete-ecran">
-        <h1>Révision</h1>
+        <h1>Jeu</h1>
       </header>
       <div id="contenu-revision"></div>
     </section>
@@ -160,8 +167,9 @@
   <!-- Barre de navigation -->
   <nav id="barre-navigation">
     <button class="nav-bouton active" data-ecran="liste" type="button">Liste</button>
+    <button class="nav-bouton" data-ecran="categories" type="button">Catégories</button>
     <button class="nav-bouton" data-ecran="ajout" type="button">Ajouter</button>
-    <button class="nav-bouton" data-ecran="revision" type="button">Réviser</button>
+    <button class="nav-bouton" data-ecran="revision" type="button">Jeu</button>
     <button class="nav-bouton" data-ecran="parametres" type="button">Paramètres</button>
   </nav>
 

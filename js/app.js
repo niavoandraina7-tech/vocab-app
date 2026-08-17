@@ -2,7 +2,7 @@
 
 /**
  * Affiche l'écran demandé et masque les autres.
- * @param {string} nomEcran - Identifiant de l'écran (liste, ajout, categories, revision, parametres)
+ * @param {string} nomEcran - Identifiant de l'écran (liste, detail, ajout, categories, revision, parametres)
  */
 function afficherEcran(nomEcran) {
   // Quitter l'écran de révision arrête une éventuelle session de quiz
@@ -16,8 +16,10 @@ function afficherEcran(nomEcran) {
   });
 
   // Met à jour le bouton actif de la barre de navigation
+  // (la fiche détail fait partie de l'onglet Liste)
+  const nomEcranNav = nomEcran === 'detail' ? 'liste' : nomEcran;
   document.querySelectorAll('.nav-bouton').forEach((bouton) => {
-    bouton.classList.toggle('active', bouton.dataset.ecran === nomEcran);
+    bouton.classList.toggle('active', bouton.dataset.ecran === nomEcranNav);
   });
 
   // Recharge la liste des mots à chaque affichage de l'écran Liste
@@ -53,12 +55,6 @@ document.querySelectorAll('.nav-bouton').forEach((bouton) => {
     afficherEcran(bouton.dataset.ecran);
   });
 });
-
-// Accès à la gestion des catégories depuis l'écran Liste
-document.getElementById('btn-gestion-categories').addEventListener('click', () => afficherEcran('categories'));
-
-// Retour à la liste depuis l'écran Catégories
-document.getElementById('btn-retour-liste').addEventListener('click', () => afficherEcran('liste'));
 
 // Enregistrement du Service Worker (PWA / hors ligne), si supporté par le navigateur
 if ('serviceWorker' in navigator) {

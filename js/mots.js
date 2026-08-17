@@ -3,6 +3,9 @@
 // Identifiant du mot en cours d'édition (null = mode ajout)
 let motEnEditionId = null;
 
+// Identifiant du mot affiché dans l'écran Détail (null = aucun)
+let motEnDetailId = null;
+
 /**
  * (Re)remplit une liste déroulante de filtre catégorie avec l'arbre complet.
  * @param {HTMLSelectElement} select - L'élément <select> à remplir
@@ -37,33 +40,17 @@ function remplirOptionsFiltreCategorie(select, categories) {
 }
 
 /**
- * Applique la recherche texte et le filtre catégorie sur la liste des mots.
+ * Applique la recherche texte sur la liste des mots.
  * @param {Array<Object>} mots
- * @param {Array<Object>} categories
  * @returns {Array<Object>}
  */
-function filtrerMots(mots, categories) {
+function filtrerMots(mots) {
   const texte = document.getElementById('champ-recherche').value.trim().toLowerCase();
-  const idCategorie = document.getElementById('filtre-categorie').value;
 
-  // Ids de la catégorie choisie + toutes ses sous-catégories
-  let idsCategorie = null;
-  if (idCategorie) {
-    idsCategorie = obtenirIdsCategorieEtSousCategories(idCategorie, categories);
-  }
-
-  return mots.filter((mot) => {
-    // Recherche texte : insensible à la casse, partielle, sur mot + définition
-    const correspondTexte = !texte
-      || mot.mot.toLowerCase().includes(texte)
-      || (mot.definition || '').toLowerCase().includes(texte);
-
-    // Filtre catégorie : le mot est dans la catégorie choisie ou l'une de ses sous-catégories
-    const correspondCategorie = !idsCategorie
-      || (mot.categorieIds || []).some((id) => idsCategorie.has(id));
-
-    return correspondTexte && correspondCategorie;
-  });
+  // Recherche texte : insensible à la casse, partielle, sur mot + définition
+  return mots.filter((mot) => !texte
+    || mot.mot.toLowerCase().includes(texte)
+    || (mot.definition || '').toLowerCase().includes(texte));
 }
 
 /**
@@ -72,14 +59,6 @@ function filtrerMots(mots, categories) {
 function afficherListeMots() {
   Promise.all([obtenirTousLesMots(), obtenirToutesLesCategories()])
     .then(([mots, categories]) => {
-      remplirOptionsFiltreCategorie(document.getElementById('filtre-categorie'), categories);
-
-      // Si la catégorie filtrée a été supprimée entre-temps, revient à « Toutes »
-      const selectFiltre = document.getElementById('filtre-categorie');
-      if (selectFiltre.value && !categories.some((c) => c.id === selectFiltre.value)) {
-        selectFiltre.value = '';
-      }
-
       const ul = document.getElementById('liste-mots');
       ul.innerHTML = '';
 
@@ -91,7 +70,7 @@ function afficherListeMots() {
         return;
       }
 
-      const motsFiltres = filtrerMots(mots, categories);
+      const motsFiltres = filtrerMots(mots);
 
       if (motsFiltres.length === 0) {
         const li = document.createElement('li');
@@ -136,7 +115,7 @@ function afficherListeMots() {
           li.append(categoriesEl);
         }
 
-        li.addEventListener('click', () => ouvrirEditionMot(mot.id));
+        li.addEventListener('click', () => afficherDetailMot(mot.id));
         ul.appendChild(li);
       });
     })
@@ -144,14 +123,13 @@ function afficherListeMots() {
 }
 
 /**
- * Active la recherche en temps réel et le filtre par catégorie.
+ * Active la recherche en temps réel.
  */
-function initialiserRechercheFiltre() {
+function initialiserRecherche() {
   document.getElementById('champ-recherche').addEventListener('input', () => afficherListeMots());
-  document.getElementById('filtre-categorie').addEventListener('change', () => afficherListeMots());
 }
 
-initialiserRechercheFiltre();
+initialiserRecherche();
 
 /**
  * Remplit la liste de cases à cocher des catégories, en pré-cochant idsSelectionnes.
@@ -215,6 +193,65 @@ function reinitialiserFormulaireMot() {
   document.getElementById('form-mot').reset();
   document.getElementById('btn-supprimer-mot').hidden = true;
   remplirSelectionCategories([]);
+}
+
+/**
+ * Affiche la fiche détaillée d'un mot : toutes ses informations, avec un
+ * bouton « Modifier » qui ouvre ensuite le formulaire d'édition.
+ * @param {string} id - Identifiant du mot à afficher
+ */
+function afficherDetailMot(id) {
+  Promise.all([obtenirTousLesMots(), obtenirToutesLesCategories()])
+    .then(([mots, categories]) => {
+      const mot = mots.find((m) => m.id === id);
+      if (!mot) {
+        console.error('Mot introuvable :', id);
+        return;
+      }
+
+      motEnDetailId = mot.id;
+      document.getElementById('titre-detail').textContent = mot.mot;
+
+      const conteneur = document.getElementById('contenu-detail');
+      conteneur.innerHTML = '';
+
+      const badge = document.createElement('span');
+      badge.className = `badge badge-${mot.niveauMaitrise || 'nouveau'}`;
+      badge.textContent = libelleNiveau(mot.niveauMaitrise || 'nouveau');
+      conteneur.appendChild(badge);
+
+      const nomsCategories = new Map(categories.map((c) => [c.id, c.nom]));
+      const nomsCategorie = (mot.categorieIds || [])
+        .map((idCat) => nomsCategories.get(idCat))
+        .filter(Boolean)
+        .join(', ');
+
+      const lignes = [
+        ['Définition', mot.definition || '(aucune définition)'],
+        ['Exemple', mot.exemple || '(aucun exemple)'],
+        ['Langue', mot.langue || '—'],
+        ['Catégories', nomsCategorie || 'Aucune']
+      ];
+
+      lignes.forEach(([libelle, valeur]) => {
+        const ligne = document.createElement('div');
+        ligne.className = 'detail-ligne';
+
+        const titre = document.createElement('span');
+        titre.className = 'detail-libelle';
+        titre.textContent = libelle;
+
+        const contenu = document.createElement('span');
+        contenu.className = 'detail-valeur';
+        contenu.textContent = valeur;
+
+        ligne.append(titre, contenu);
+        conteneur.appendChild(ligne);
+      });
+
+      afficherEcran('detail');
+    })
+    .catch((erreur) => console.error('Erreur lors du chargement du mot', erreur));
 }
 
 /**
@@ -309,6 +346,16 @@ function initialiserFormulaireMot() {
         document.getElementById('form-mot').reset();
         afficherEcran('liste');
       }).catch((erreur) => console.error('Erreur lors de l\'ajout du mot', erreur));
+    }
+  });
+
+  // Retour à la liste depuis la fiche détaillée
+  document.getElementById('btn-retour-detail').addEventListener('click', () => afficherEcran('liste'));
+
+  // Ouverture du formulaire d'édition depuis la fiche détaillée
+  document.getElementById('btn-modifier-mot').addEventListener('click', () => {
+    if (motEnDetailId) {
+      ouvrirEditionMot(motEnDetailId);
     }
   });
 

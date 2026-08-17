@@ -306,9 +306,8 @@ legend {
   margin-bottom: 8px;
 }
 
-/* ---- Recherche et filtre ---- */
-#champ-recherche,
-#filtre-categorie {
+/* ---- Recherche ---- */
+#champ-recherche {
   width: 100%;
   min-height: 44px;
   padding: 10px 12px;
@@ -405,6 +404,46 @@ legend {
   margin: 10px 0 6px;
   font-size: 0.78rem;
   color: var(--couleur-texte-secondaire);
+}
+
+/* ---- Fiche détail d'un mot ---- */
+.contenu-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.detail-ligne {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 14px;
+  background-color: #ffffff;
+  border: 1px solid var(--couleur-bordure);
+  border-radius: 10px;
+}
+
+.detail-libelle {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--couleur-texte-secondaire);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.detail-valeur {
+  font-size: 1rem;
+  overflow-wrap: anywhere;
+}
+
+.actions-detail {
+  display: flex;
+  margin-top: 16px;
+}
+
+.actions-detail button {
+  flex: 1;
 }
 
 /* ---- Gestion des catégories ---- */
@@ -669,54 +708,10 @@ button:disabled {
   margin-bottom: 16px;
 }
 
-.quiz-info-vide {
-  font-weight: 400;
-  font-style: italic;
-  color: var(--couleur-texte-secondaire);
-  margin-top: 12px;
-}
-
-.quiz-choix-nombre {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.quiz-choix-nombre > p {
-  flex-basis: 100%;
-  font-weight: 500;
-  margin-bottom: 4px;
-}
-
-.btn-quiz-choix {
-  min-width: 64px;
-  flex: 1;
-  background-color: #ffffff;
-  color: var(--couleur-primaire);
-  border: 2px solid var(--couleur-primaire);
-  font-weight: 600;
-}
-
-.btn-quiz-tous {
-  flex-basis: 100%;
-}
-
 .quiz-progres {
   color: var(--couleur-texte-secondaire);
   font-weight: 500;
   margin-bottom: 8px;
-}
-
-.quiz-note-reduit {
-  font-size: 0.85rem;
-  color: #b06000;
-  background-color: #fef7e0;
-  border: 1px solid rgba(176, 96, 0, 0.3);
-  border-radius: 8px;
-  padding: 10px 12px;
-  margin-bottom: 12px;
 }
 
 .quiz-mot {
