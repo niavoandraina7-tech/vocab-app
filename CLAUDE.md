@@ -69,7 +69,7 @@ Une fonction d'un fichier appelée dans un autre ne doit être exécutée qu'au 
 - `detail` est un **sous-écran** de l'onglet Liste (un appui sur un mot ouvre sa fiche ; le bouton « Modifier » ouvre le formulaire). Le menu garde « Liste » surligné pour `detail` (voir `nomEcranNav` dans app.js).
 - Quitter l'écran `revision` appelle `arreterQuiz()` (arrêt du minuteur du quiz).
 - **`connexion` est un écran dédié, sans navigation** : `afficherEcran` pose la classe `.sans-navigation` sur `<body>` quand `nomEcran === 'connexion'` ; le CSS masque le hamburger et le tiroir, et réduit les paddings de `#app`. Le menu est aussi fermé à l'entrée sur cet écran. La navigation réapparaît dès qu'on quitte l'écran.
-- **La page de connexion s'affiche en premier à l'ouverture** : dans app.js, si Supabase est configuré et qu'aucune session n'est restaurée au chargement, l'app démarre sur `connexion`. Une session restaurée (`INITIAL_SESSION`) ouvre directement la Liste ; « Continuer sans compte » entre en mode invité (Liste) ; la déconnexion (`SIGNED_OUT`) ramène sur la page de connexion. « ← Retour » repart vers Paramètres si l'écran a été ouvert depuis la section Compte, sinon vers la Liste (`cibleRetourConnexion` dans auth.js).
+- **La page de connexion est un mur de connexion** : à l'ouverture (Supabase configuré, aucune session), l'app démarre sur `connexion` et il n'existe **aucun autre accès** — pas de bouton retour, pas de mode invité, navigation masquée. Seule une authentification réussie (ou une session restaurée `INITIAL_SESSION`) ouvre l'application (Liste). La déconnexion (`SIGNED_OUT`) ramène sur la page de connexion. Sans configuration Supabase (`config.js` en placeholder), l'app démarre sur la Liste (aucun compte possible).
 
 ## Modèle de données (IndexedDB)
 
@@ -119,10 +119,11 @@ Helpers de dates partagés (db.js) : `parserDateRevision` (accepte les deux form
 
 ## Authentification (auth.js)
 
-- Écran `connexion` affiché **au démarrage de l'app** (si Supabase est configuré et sans session restaurée) et accessible depuis **Paramètres → Compte → « Se connecter / Créer un compte »**. Le mode invité reste possible via « Continuer sans compte » : ce n'est pas un mur de connexion bloquant.
+- Écran `connexion` : **mur de connexion** (Supabase configuré) — seule l'authentification donne accès à l'app. Il est aussi accessible depuis **Paramètres → Compte → « Se connecter / Créer un compte »** pour un changement de compte (après déconnexion, la page de connexion s'affiche d'office).
 - **Design** : carte centrée (`connexion-carte`, max 440 px) avec en-tête logo 📖 + titre, champs pleine largeur, bouton principal pleine largeur, lien « Mot de passe oublié ? » et bouton discret « Continuer sans compte ».
 - **Onglets « Connexion / Inscription »** (`btn-onglet-connexion`, `btn-onglet-inscription`, `role=tablist`) : `definirModeConnexion('connexion'|'inscription')` bascule le libellé du bouton submit (« Se connecter » / « Créer mon compte »), l'`autocomplete` du mot de passe (`current-password`/`new-password`) et la visibilité du lien « Mot de passe oublié ?`. La soumission du formulaire route vers `seConnecter()` ou `sinscrire()` selon le mode actif (`modeConnexion`).
 - **Session** : `onAuthStateChange` (SIGNED_IN / INITIAL_SESSION / SIGNED_OUT) ; `initialiserAuth()` peut être appelé plusieurs fois sans doublon d'écouteurs (garde `ecranConnexionBranche`). `obtenirClientSupabase()` expose le client à sync.js.
+- **Session expirée vs déconnexion volontaire** : SIGNED_OUT survient dans les deux cas. `deconnexionExplicite` (posé par `seDeconnecter`) permet de distinguer : une expiration affiche « Votre session a expiré… » sur la page de connexion, une déconnexion volontaire renvoie au mur sans message.
 - **Inscription** : si la confirmation d'email est requise dans le projet (`mailer_autoconfirm: false`), le compte est créé mais pas de session → message « Un email de confirmation vous a été envoyé », l'utilisateur reste sur l'écran. Les erreurs sont traduites en français (`erreurTraduite`).
 - **Erreurs réseau** : se connecter nécessite internet (l'app hors-ligne, elle, n'en a pas besoin) — message clair dans ce cas.
 

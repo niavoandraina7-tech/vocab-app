@@ -1211,19 +1211,6 @@ button:disabled {
   margin: 10px auto 0;
 }
 
-.btn-mode-local {
-  width: 100%;
-  background: transparent;
-  color: var(--couleur-texte-secondaire);
-  border: 1px dashed var(--couleur-bordure);
-  margin-top: 18px;
-}
-
-.btn-mode-local:hover {
-  color: var(--couleur-primaire);
-  border-color: var(--couleur-primaire);
-}
-
 /* ---- Paramètres : index des sections ---- */
 .liste-sections-parametres {
   display: flex;

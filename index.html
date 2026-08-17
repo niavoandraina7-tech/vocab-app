@@ -118,15 +118,14 @@
     </section>
 
     <!-- Écran : Connexion / Inscription (Supabase) -->
-    <!-- La barre de navigation est masquée sur cet écran (classe .sans-navigation sur <body>) -->
+    <!-- Mur de connexion : seule l'authentification donne accès à l'application.
+         La barre de navigation est masquée sur cet écran (classe .sans-navigation sur <body>). -->
     <section id="ecran-connexion" class="ecran">
-      <button id="btn-retour-connexion" class="btn-retour" type="button">← Retour</button>
-
       <div class="connexion-conteneur">
         <div class="connexion-entete">
           <span class="connexion-logo" aria-hidden="true">📖</span>
           <h1>Mon Vocabulaire</h1>
-          <p class="conseil">Connecte-toi pour synchroniser tes mots entre tous tes appareils.</p>
+          <p class="conseil">Connecte-toi pour accéder à ton vocabulaire et le synchroniser entre tous tes appareils.</p>
         </div>
 
         <div class="connexion-carte">
@@ -148,8 +147,6 @@
             <button type="button" id="btn-motdepasse-oublie" class="btn-lien" hidden>Mot de passe oublié ?</button>
           </form>
         </div>
-
-        <button type="button" id="btn-mode-local" class="btn-mode-local">Continuer sans compte (mode local)</button>
       </div>
     </section>
 

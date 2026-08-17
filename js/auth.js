@@ -175,6 +175,9 @@ function seDeconnecter() {
   if (!clientSupabase) {
     return;
   }
+  // Déconnexion volontaire : le retour au mur ne doit PAS afficher
+  // le message « session expirée ».
+  deconnexionExplicite = true;
   clientSupabase.auth.signOut()
     .catch((erreur) => console.error('Erreur lors de la déconnexion', erreur));
 }
@@ -236,7 +239,6 @@ function afficherZoneCompte() {
     bouton.id = 'btn-ouvrir-connexion';
     bouton.textContent = 'Se connecter / Créer un compte';
     bouton.addEventListener('click', () => {
-      cibleRetourConnexion = 'parametres';
       effacerMessageConnexion();
       afficherEcran('connexion');
     });
@@ -292,10 +294,11 @@ let ecranConnexionBranche = false;
 // Mode courant de l'écran Connexion : 'connexion' ou 'inscription'
 let modeConnexion = 'connexion';
 
-// Écran de retour du bouton « ← Retour » de l'écran Connexion.
-// 'liste' quand l'app démarre sur la page de connexion, 'parametres' quand
-// l'écran a été ouvert depuis la section Compte de Paramètres.
-let cibleRetourConnexion = 'liste';
+// Vrai quand la déconnexion vient d'un choix explicite de l'utilisateur
+// (bouton « Se déconnecter ») et non d'une expiration de session.
+// Permet de distinguer « session expirée » de « déconnexion volontaire »
+// dans l'écouteur onAuthStateChange (les deux émettent SIGNED_OUT).
+let deconnexionExplicite = false;
 
 /**
  * Bascule l'écran Connexion entre les modes « Connexion » et « Inscription »
@@ -347,17 +350,6 @@ function brancherEcranConnexion() {
   // « Mot de passe oublié ? » (visible en mode Connexion uniquement)
   document.getElementById('btn-motdepasse-oublie').addEventListener('click', motDePasseOublie);
 
-  document.getElementById('btn-retour-connexion').addEventListener('click', () => {
-    effacerMessageConnexion();
-    afficherEcran(cibleRetourConnexion);
-  });
-
-  // « Continuer sans compte » : on entre dans l'app en mode invité
-  document.getElementById('btn-mode-local').addEventListener('click', () => {
-    effacerMessageConnexion();
-    afficherEcran('liste');
-  });
-
   // État initial : onglet Connexion actif
   definirModeConnexion('connexion');
 }
@@ -387,14 +379,27 @@ function initialiserAuth() {
   // Réagit aux changements de session : connexion, déconnexion, rafraîchissement du token
   clientSupabase.auth.onAuthStateChange((evenement, session) => {
     if (evenement === 'SIGNED_OUT') {
+      // SIGNED_OUT survient soit après une déconnexion volontaire, soit quand
+      // la session expire (token invalide/rafraîchissement impossible).
+      const sessionExpiree = !deconnexionExplicite;
+      deconnexionExplicite = false;
+
       utilisateurCourant = null;
       if (typeof arreterSync === 'function') {
         arreterSync();
       }
       afficherZoneCompte();
-      // Retour à la page de connexion (celle-ci s'affiche en premier à l'ouverture)
-      cibleRetourConnexion = 'liste';
+      // Retour à la page de connexion (mur de connexion : seul un compte donne accès)
       afficherEcran('connexion');
+
+      if (sessionExpiree) {
+        afficherMessageConnexion(
+          'Votre session a expiré. Reconnectez-vous pour continuer — vos données restent en sécurité sur cet appareil.',
+          'info'
+        );
+      } else {
+        effacerMessageConnexion();
+      }
       return;
     }
 
@@ -424,7 +429,6 @@ function initialiserAuth() {
       // (les connexions/inscriptions faites depuis le formulaire naviguent déjà
       // vers Paramètres dans seConnecter()/sinscrire()).
       if (evenement === 'INITIAL_SESSION') {
-        cibleRetourConnexion = 'liste';
         afficherEcran('liste');
       }
     }
