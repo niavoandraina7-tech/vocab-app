@@ -282,7 +282,17 @@ function afficherZoneCompte() {
 
 // ---- Branchements de l'écran Connexion ----
 
+// Garde anti double-branchement : initialiserAuth peut être appelé plusieurs
+// fois (ex : restauration de session), les écouteurs ne doivent pas être posés
+// deux fois.
+let ecranConnexionBranche = false;
+
 function brancherEcranConnexion() {
+  if (ecranConnexionBranche) {
+    return;
+  }
+  ecranConnexionBranche = true;
+
   document.getElementById('form-connexion').addEventListener('submit', (evenement) => {
     evenement.preventDefault();
     seConnecter();

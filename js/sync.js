@@ -420,6 +420,7 @@ function mettreAJourIndicateurSync() {
       if (!user) {
         indicateur.hidden = true;
         indicateur.textContent = '';
+        indicateur.title = '';
       } else {
         indicateur.hidden = false;
         indicateur.textContent = libelle;
